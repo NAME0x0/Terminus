@@ -1,0 +1,25 @@
+[package]
+name = "terminus"
+version = "0.1.0"
+description = "A terminal-native workspace"
+authors = ["Terminus contributors"]
+edition = "2021"
+
+[lib]
+name = "terminus_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+anyhow = "1"
+base64 = "0.22"
+dirs = "5"
+notify = "8.2.0"
+portable-pty = "0.8"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tauri = { version = "2", features = [] }
+thiserror = "1"
+toml = "0.8"

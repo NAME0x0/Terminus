@@ -3,6 +3,10 @@ build/
 bin/  
 lib/  
 out/  
+frontend/dist/
+src-tauri/gen/
+src-tauri/target/
+node_modules/
 # CMake generated files  
 CMakeFiles/  
 CMakeCache.txt  

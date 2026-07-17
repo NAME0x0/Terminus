@@ -1,18 +1,28 @@
-# Terminus v0.1 — Terminal Core (Epic E0) — Design Spec
+# Terminus E0 — Terminal Foundation — Technical Design Spec
 
-> Status: approved 2026-06-22. Scope: Epic E0 only. North-star: `VISION.md`.
+> Architecture approved: 2026-06-22. Milestone boundary revised: 2026-07-17.
+> Scope: internal E0 technical foundation only. North-star: `VISION.md`.
+> Public release contract: `docs/product/terminus-v0.1-product-brief.md`.
+
+E0 was originally labeled v0.1. That coupling is superseded: E0 is the
+engineering foundation, while v0.1 is the first publicly valuable persistent-
+workspace release built on top of accepted E0 behavior.
 
 ## 1. Goal
 
-Ship a **real, cross-platform terminal** that proves the Tauri + xterm.js +
-PTY stack works on Windows, macOS, and Linux. This de-risks the hardest part of
-the whole project before any panes/AI/media are layered on.
+Build a **real, cross-platform terminal foundation** that proves the Tauri +
+xterm.js + PTY stack works on Windows, macOS, and Linux. This de-risks the
+hardest technical dependency before persistent workspaces or later product
+capabilities are layered on.
 
-Success = open Terminus, get a working shell that runs `vim`, `htop`, `ssh`,
-git with color; open tabs; split panes; pick a theme; edit a config file and
-see it apply.
+E0 succeeds when an internal build opens a working shell that runs `vim`,
+`htop`, `ssh`, and colored Git output; tabs and splits behave predictably;
+themes and config changes apply; lifecycle failures are visible; and automated
+checks hold the behavior across all three platforms.
 
-## 2. In scope (v0.1)
+E0 completion is necessary but not sufficient for a public release.
+
+## 2. In scope (E0)
 
 - PTY-backed terminal via `portable-pty` (ConPTY on Windows, forkpty on unix).
 - xterm.js rendering with addons: **WebGL** (renderer), **fit**, **search**,
@@ -29,11 +39,12 @@ see it apply.
   find. Defaults overridable in config.
 - Cross-platform CI (GitHub Actions matrix: windows / macos / ubuntu).
 
-## 3. Out of scope (later epics)
+## 3. Out of scope (product milestones after E0)
 
-Command blocks (E1), detach/attach + persistence (E2), AI (E3), media/browser
-panes (E4–E6), command palette / SSH manager / quake (E7), Lua / plugins (E8).
-v0.1 has a static default keybinding scheme; no scripting.
+Named workspace persistence and restore (E1 / public v0.1), advanced workspace
+interaction and detach/attach (E2), agent-aware workflows (E3), command blocks
+(E4), content/browser panes (E5), and integrations/plugins (E6). E0 has a
+static default keybinding scheme and no scripting.
 
 ## 4. Architecture
 
@@ -48,7 +59,7 @@ Two halves over Tauri IPC. Raw bytes end-to-end; **Rust never parses VT escapes*
 │  config/   fetch config, apply, react to reload  │
 │  keys/     keybinding map → actions              │
 └──────────▲───────────────────────│───────────────┘
-   events   │ terminal://output/{id}│ commands
+   events   │ terminal://output     │ commands
             │ terminal://exit/{id}  ▼ create/write/resize/close/get_config
 ┌──────────│───────────────────────▼───────────────┐
 │  commands.rs   Tauri IPC surface (only entry pt)  │
@@ -73,7 +84,7 @@ Two halves over Tauri IPC. Raw bytes end-to-end; **Rust never parses VT escapes*
 - **`commands.rs`** — Tauri command handlers, the sole IPC surface (see §5).
   Thin: validate, delegate to `session`/`config`, return `Result`.
 
-### 4.2 Frontend units (TS, plain + Vite — no framework in v0.1)
+### 4.2 Frontend units (TS, plain + Vite — no framework in E0)
 
 - **`terminal`** — wraps one `Terminal` (xterm.js) + addons; subscribes to its
   `output`/`exit` events; forwards `onData`/resize to backend.
@@ -95,8 +106,8 @@ Two halves over Tauri IPC. Raw bytes end-to-end; **Rust never parses VT escapes*
 - `get_config() -> Config`
 
 **Events (Rust → frontend):**
-- `terminal://output/{id}` — payload: bytes (base64 or `Vec<u8>`).
-- `terminal://exit/{id}` — payload: `{ code }`.
+- `terminal://output` — payload: `{ id, data }`, where `data` is base64 bytes.
+- `terminal://exit` — payload: `{ id, code }`.
 - `config://reloaded` — payload: `Config`.
 
 ## 6. Data flow
@@ -104,7 +115,7 @@ Two halves over Tauri IPC. Raw bytes end-to-end; **Rust never parses VT escapes*
 - **Input:** keypress → xterm `onData(data)` → `write_stdin(id, data)` →
   `PtySession.write` → shell.
 - **Output:** shell stdout → pty reader thread → channel → `emit
-  terminal://output/{id}` → xterm `.write(bytes)`.
+  terminal://output` with pane id → xterm `.write(bytes)`.
 - **Resize:** pane resize → fit addon computes cols/rows → `resize(id, c, r)`
   → `PtySession.resize`.
 - **Spawn split:** read focused pane cwd (from OSC 7 state) → `create_terminal`
@@ -141,7 +152,7 @@ Two halves over Tauri IPC. Raw bytes end-to-end; **Rust never parses VT escapes*
 src-tauri/
   src/{ main.rs, commands.rs, pty/mod.rs, session/mod.rs, config/mod.rs }
   Cargo.toml  tauri.conf.json  build.rs
-src/
+frontend/     # temporary during C++ transition; later can become src/
   main.ts  index.html
   terminal/  layout/  theme/  config/  keys/  styles/
 package.json  vite.config.ts
@@ -151,8 +162,9 @@ docs/  LICENSE  STATUS.md  VISION.md  README.md (rewritten)
 
 Old C++ (`src/*.cpp`, `include/`, `CMakeLists.txt`, `build.bat`, C++ `tests/`,
 `temp.txt`) stays in-tree for now, **deleted in a later step**. Git history
-preserves it regardless. New Rust/TS lands in `src-tauri/` + `src/` and won't
-collide with the C++ headers during the transition.
+preserves it regardless. New Rust/TS initially lands in `src-tauri/` +
+`frontend/` to avoid colliding with the old C++ `src/`; after deletion, the
+frontend can be renamed to `src/` if desired.
 
 ## 10. Open questions
 

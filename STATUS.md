@@ -1,27 +1,36 @@
 # Terminus — Project Status
 
 > Living document. Tracks vision vs. reality, build state, and decisions.
-> Last updated: 2026-06-22
+> Last updated: 2026-07-17
 >
 > See also: **`VISION.md`** (north-star) ·
-> **`docs/superpowers/specs/2026-06-22-terminus-v0.1-terminal-core-design.md`** (v0.1 spec)
+> **`docs/product/terminus-v0.1-product-brief.md`** (first public release) ·
+> **`docs/superpowers/specs/2026-06-22-terminus-e0-terminal-foundation-design.md`** (E0 technical design) ·
+> **`docs/research/warp-terminal-notes.md`** (Warp reference notes)
 
 ## 1. What Terminus Is (Vision)
 
-**A terminal-native workspace** — a cross-platform terminal at the center, with
-media, web, and AI as first-class panes, fully mouse-interactive like a desktop
-app, and AI woven throughout via one provider-agnostic gateway. Warp × Wave ×
-Arc browser × a media center, fused around a real terminal. Formerly named
-**ITD (Integrated Terminal Desktop)**; the literal "replace the desktop" framing
-is now tagline only.
+**A local-first, persistent workspace for developers who run multiple shells,
+tools, and coding agents.** Terminus keeps terminal work organized, visible,
+and resumable without requiring a cloud account.
 
-Full north-star + epics E0–E8: **`VISION.md`**. Build order: terminal core (E0 /
-v0.1) first, everything else phased.
+The first switching reason is a named project workspace that restores its tabs,
+split layout, focus, shell profiles, and working directories after restart.
+The terminal is the foundation; durable project context is the product wedge.
+
+E0 is now explicitly an internal terminal-foundation milestone. It is not the
+v0.1 release. The first public v0.1 combines accepted E0 behavior with the
+persistent-workspace contract in `docs/product/terminus-v0.1-product-brief.md`.
 
 ## 2. Current Reality (one line)
 
-A one-sitting architecture scaffold: rich interface headers, ~85% empty
-implementation stubs, and **it does not compile**. Abandoned right after scaffolding.
+An uncommitted Tauri/Rust + Vite/TypeScript E0 prototype now exists beside the
+stale C++/wxWidgets scaffold. It typechecks, passes eight Rust tests and 21
+frontend tests, and produces a Windows release executable. The cross-platform
+CI contract exists and Windows automated PTY smoke passes, but remote CI and
+the native-app manual smoke matrix remain unverified, so E0
+acceptance is incomplete and the implementation has not been published to
+GitHub.
 
 ## 3. Tech Stack
 
@@ -49,7 +58,10 @@ implementation stubs, and **it does not compile**. Abandoned right after scaffol
 | Target       | **Cross-platform** Win / macOS / Linux          |
 | Binary       | ~10MB, low RAM (vs Electron ~150MB)             |
 
-## 4. Feature Matrix — Promised vs. Actual
+## 4. Legacy Scaffold Matrix — Promised vs. Actual
+
+This table describes the abandoned C++ direction. It is retained as transition
+evidence and is not the active product roadmap.
 
 | Feature (README)        | Header API | Implementation | State        |
 |-------------------------|:----------:|:--------------:|--------------|
@@ -65,11 +77,52 @@ implementation stubs, and **it does not compile**. Abandoned right after scaffol
 | Theming (JSON)          | n/a        | asset only²    | 🔴 unused    |
 
 ¹ Transparency partially wired in `terminalwx.cpp` via `SetTransparent`.
-² `res/themes/default.json` is a complete theme with no loader reading it.
+² The old scaffold never loaded `res/themes/default.json`; the new E0 frontend does.
 
 ## 5. Code Inventory
 
-**Real implementation (4 files):**
+### 5a. New implementation
+
+- `src-tauri/` — Rust backend scaffold with Tauri commands, config loading,
+  PTY sessions via `portable-pty`, and session management.
+- `frontend/` — plain TypeScript/Vite frontend with xterm panes, tabs, splits,
+  keybinding dispatch, and theme-to-CSS/xterm mapping.
+- E0 polish now includes pane headers/actions, lifecycle states, focused-pane
+  status, split cwd inheritance, resize debounce, pane maximize, focus cycling,
+  and a command-palette/action-registry foundation.
+- Pane rendering now tracks whether a terminal has mounted independently from
+  current DOM attachment, preserving pane sessions through split, tab,
+  maximize/restore, and close re-renders. Eleven jsdom/Vitest regressions cover
+  the layout lifecycle and its final-tab/directional edge cases.
+- PTY lifecycle now waits on the real child independently from output reads,
+  drains output before publishing the exit event, preserves the process exit
+  code, rejects writes/resizes after exit, and uses an independent killer for
+  explicit close. Rust integration tests cover nonzero exit, failed-spawn ID
+  preservation, and manager close/removal behavior.
+- Config now watches the platform TOML file with `notify`, falls back safely on
+  malformed input, and emits live updates. The frontend loads the canonical
+  JSON theme and reapplies UI/xterm colors, fonts, and keybindings in place.
+- Tabs now expose close controls plus previous/next actions, and pane arrow
+  actions choose a geometrically adjacent pane instead of aliasing sequential
+  focus.
+- Frontend failures now surface through bounded, dismissible notices; shell
+  spawn failures remain inline and fatal startup failures offer retry. Listener
+  registration cleans up partial success before retrying.
+- Twenty-one Vitest cases cover layout, tabs, spatial focus, config/theme/
+  keybinding application, action failures, notices, and event registration.
+  Eight Rust tests cover config, PTY/session lifecycle, interactive shell
+  input/resize, ANSI VT preservation, and sustained output.
+- `.github/workflows/ci.yml` defines the Windows/macOS/Ubuntu typecheck, test,
+  format, Clippy, PTY smoke, and optimized-build matrix. The contract parses
+  locally but is not considered passing until GitHub executes all three jobs.
+- `package.json`, `vite.config.ts`, `tsconfig.json` — new JS/Tauri entrypoints.
+
+`frontend/` is used during the transition to avoid colliding with the old C++
+`src/` directory. It can be renamed to `src/` after the C++ tree is deleted.
+
+### 5b. Old implementation
+
+**Real old implementation (4 files):**
 - `src/terminal/terminalwx.cpp` (331) — only substantive code. See bugs §6.
 - `src/mainframe.cpp` (204) — menus, status bar, AUI layout, wires components.
 - `src/app.cpp` (44), `src/main.cpp` (4) — wxApp boilerplate.
@@ -107,31 +160,43 @@ implementation stubs, and **it does not compile**. Abandoned right after scaffol
       _(2026-06-22)_
 - [x] **Tech stack** — _Tauri (Rust + web)_, xterm.js terminal, `portable-pty`,
       `mlua`. See §3b. _(2026-06-22)_
-- [x] **Scope for v0.1** — _Terminal core only_: real cross-platform terminal
-      (PTY + xterm.js), tabs + splits, theming, config file. No explorer/widgets
-      yet — they layer on as easy web UI once the terminal engine is proven on
-      all 3 OSes. _(2026-06-22)_
+- [x] **E0 scope** — _Terminal foundation_: real cross-platform terminal
+      (PTY + xterm.js), tabs + splits, theming, config, tests, and CI.
+      E0 is an internal technical milestone. _(Reclassified 2026-07-17)_
+- [x] **First public release** — _v0.1 Persistent Project Workspaces_: accepted
+      E0 plus named, local workspace persistence and restore. Layout and cwd
+      restore in v0.1; process detach/reattach comes later. _(2026-07-17)_
+- [x] **Primary user** — developers and technical power users coordinating
+      several shells, dev tools, SSH sessions, and coding-agent CLIs.
+      _(2026-07-17)_
+- [x] **Switching reason** — stop and resume a named project workspace without
+      rebuilding terminal layout and cwd context. _(2026-07-17)_
 
 - [x] **C++ handling** — _delete later_ (not now). Old C++ stays in-tree during
       the Tauri transition; removed in a later step (git history preserves it).
       Old design judged stale → NOT harvested verbatim; instead **rethought**
       into the modern north-star (`VISION.md`). _(2026-06-22)_
-- [x] **Vision scope** — expanded from "power terminal + panes" to
-      _terminal-native workspace_ (media + browser + AI panes, editor-grade
-      mouse, AI gateway). Captured as north-star; v0.1 unchanged. _(2026-06-22)_
+- [x] **Vision scope** — narrowed from a broad terminal/media/browser/AI
+      collection to a local-first persistent developer workspace. Later pane
+      types remain possible only when they strengthen the core job.
+      _(2026-07-17)_
 
-### Roadmap — Epics (see `VISION.md` for detail)
+### Roadmap — Milestones (see `VISION.md` for detail)
 
-- **E0 / v0.1** — terminal core (PTY + xterm.js, tabs+splits, theming, TOML,
-  modern render, OSC 7 cwd) ← **building now**
-- E1 — interactive shell: command blocks (OSC 133) + editor-grade mouse/drag
-- E2 — multiplexer: persist/restore, detach/attach, broadcast, layouts
-- E3 — AI gateway: local + OpenAI-compatible + Gemini + NIM + agents
-- E4 — content panes: image / video / file preview
-- E5 — embedded browser pane
-- E6 — integrations: Spotify + service widgets
-- E7 — power QoL: command palette, profiles, SSH manager, quake, notifications
-- E8 — extensibility: Lua scripting, plugin API, theme import
+- **E0 — Terminal Foundation**: internal technical milestone; PTY + xterm.js,
+  tabs/splits, themes, TOML, lifecycle, tests, and cross-platform CI.
+- **E1 / v0.1 — Persistent Project Workspaces**: named workspaces, local
+  layout/cwd persistence, restore, switching, and clear/reset behavior.
+- **E2 — Workspace Power UX**: excellent pane manipulation, profiles, project
+  actions, SSH entry points, saved layouts, then explicit detach/attach.
+- **E3 — Agent-Aware Workflows**: launch and supervise external agent CLIs;
+  provider integrations only after the terminal workflow is trustworthy.
+- **E4 — Command Intelligence**: OSC 133 metadata, blocks, search, replay, and
+  exit status.
+- **E5 — Content and Browser Panes**: files, previews, media, and web content
+  that directly support project work.
+- **E6 — Integrations and Extensibility**: AI adapters, service integrations,
+  Lua, plugins, and theme import.
 
 ## 8. Known Bugs (in existing real code)
 
@@ -143,10 +208,24 @@ implementation stubs, and **it does not compile**. Abandoned right after scaffol
 
 ## 9. Next Steps
 
-1. ✅ Vision + stack + scope decided (§7).
-2. ✅ `VISION.md` (north-star) + v0.1 spec written.
-3. ⏳ User reviews v0.1 spec.
-4. ⏳ Implementation plan (writing-plans skill) for E0.
-5. ⏳ Scaffold Tauri project (`src-tauri/` + `src/`), build E0.
-6. ⏳ Delete old C++ tree once Tauri scaffold is in place.
-7. ⏳ Rewrite `README.md` for the new direction.
+1. ✅ Define the primary user, core job, switching reason, and local-first
+   product promise.
+2. ✅ Separate E0 Terminal Foundation from the v0.1 public product release.
+3. ✅ Write the v0.1 Persistent Project Workspaces product brief.
+4. ✅ Move the uncommitted E0 implementation onto
+   `feat/e0-terminal-foundation` before further product code changes.
+5. ✅ Fix the pane remount/render lifecycle and add focused frontend tests for
+   split, tab switch, maximize/restore, close collapse, focus, and cwd inherit.
+6. ✅ Preserve real PTY exit codes, drain final output, guard dead sessions, and
+   cover failed spawn plus explicit close behavior in Rust tests.
+7. ✅ Load the JSON theme, hot-reload config, add tab close/cycling actions,
+   and implement geometry-based directional focus.
+8. ✅ Add recoverable frontend error handling, broader E0 edge/integration
+   coverage, and the Windows/macOS/Linux CI contract.
+9. ⏳ Windows automated PTY smoke passes; run the remote CI matrix and the
+   documented native-app compatibility suite before accepting E0.
+10. ⏳ Remove the stale C++ tree in a separate cleanup change after the
+   replacement is protected and reviewable.
+11. ⏳ Design and implement E1 persistence against the v0.1 product brief.
+12. ⏳ Revisit installer packaging after the v0.1 product loop is reliable;
+    current WiX ICE validation remains environment-blocked.
