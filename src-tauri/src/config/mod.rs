@@ -123,11 +123,13 @@ fn watch_config_at<F>(path: PathBuf, on_reload: F) -> Result<ConfigWatcher, Conf
 where
     F: Fn(Config) + Send + 'static,
 {
-    let parent = path
+    // Event backends may report canonical paths even when the watched path uses
+    // an OS alias (for example, macOS exposes /var through /private/var).
+    let watched_path = fs::canonicalize(path)?;
+    let parent = watched_path
         .parent()
         .ok_or(ConfigError::MissingConfigParent)?
         .to_path_buf();
-    let watched_path = path.clone();
     let mut watcher = notify::recommended_watcher(move |result: notify::Result<notify::Event>| {
         let event = match result {
             Ok(event) => event,
