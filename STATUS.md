@@ -26,8 +26,8 @@ persistent-workspace contract in `docs/product/terminus-v0.1-product-brief.md`.
 
 A published Tauri/Rust + Vite/TypeScript E0 implementation now exists beside
 the stale C++/wxWidgets scaffold on draft PR
-[#1](https://github.com/NAME0x0/Terminus/pull/1). It typechecks, passes eight
-Rust tests and 21 frontend tests, and builds on Windows, macOS, and Ubuntu in
+[#1](https://github.com/NAME0x0/Terminus/pull/1). It typechecks, passes nine
+Rust tests and 26 frontend tests, and builds on Windows, macOS, and Ubuntu in
 GitHub Actions. The native-app manual smoke matrix remains unverified, so E0
 acceptance is incomplete and the PR remains a draft.
 
@@ -109,11 +109,12 @@ evidence and is not the active product roadmap.
   registration cleans up partial success before retrying.
 - Twenty-six Vitest cases cover layout, tabs, spatial focus, config/theme/
   keybinding application, Settings, action failures, notices, and event
-  registration. Nine Rust tests cover config, PTY/session lifecycle, interactive shell
-  input/resize, ANSI VT preservation, and sustained output.
+  registration. Nine Rust tests cover config, PTY/session lifecycle,
+  interactive shell input/resize, ANSI VT preservation, and sustained output.
 - `.github/workflows/ci.yml` defines the Windows/macOS/Ubuntu typecheck, test,
-  format, Clippy, PTY smoke, and optimized-build matrix. The contract parses
-  locally but is not considered passing until GitHub executes all three jobs.
+  format, Clippy, PTY smoke, and optimized-build matrix. All three jobs pass on
+  the current draft PR head in
+  [E0 CI run 29655630436](https://github.com/NAME0x0/Terminus/actions/runs/29655630436).
 - `package.json`, `vite.config.ts`, `tsconfig.json` — new JS/Tauri entrypoints.
 
 `frontend/` is used during the transition to avoid colliding with the old C++
