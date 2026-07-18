@@ -28,7 +28,8 @@ The local E0 implementation currently includes:
 - TOML config defaults and filesystem hot reload for appearance, shell, cwd,
   and keybindings.
 - JSON theme loading and live theme/font mapping into xterm and CSS.
-- An action registry and early command palette.
+- A shortcut-aware action registry and command palette, plus in-app Settings
+  for appearance and terminal defaults.
 - Recoverable frontend error notices, inline shell failures, and a retryable
   fatal-startup state.
 - A Windows/macOS/Ubuntu GitHub Actions verification contract plus executable
@@ -119,11 +120,13 @@ for the remaining manual gate.
 ## Config
 
 On first launch, the backend creates `config.toml` in a `Terminus` folder under
-the platform config directory. The current config covers appearance, shell
-command, shell args, cwd, and keybindings. Changes are watched at runtime:
-appearance and keybindings update existing panes immediately, while shell
-changes apply to terminals created afterward. Malformed TOML falls back to
-built-in defaults without blocking startup.
+the platform config directory. Open Settings from the titlebar or with
+`Ctrl+,` to change appearance and terminal defaults without leaving the
+workspace; the same area also shows every active shortcut. The config covers
+appearance, shell command, shell args, cwd, and keybindings. Changes are watched
+at runtime: appearance and keybindings update existing panes immediately, while
+shell changes apply to terminals created afterward. Malformed TOML falls back
+to built-in defaults without blocking startup.
 
 ## Old Scaffold
 

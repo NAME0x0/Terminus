@@ -1,4 +1,5 @@
 import type { ActionRegistry } from './actions';
+import { formatShortcut } from '../keys/shortcutHints';
 
 export class CommandPalette {
   private readonly overlay = document.createElement('div');
@@ -7,7 +8,10 @@ export class CommandPalette {
   private visibleActionIds: string[] = [];
   private selectedIndex = 0;
 
-  constructor(private readonly registry: ActionRegistry) {
+  constructor(
+    private readonly registry: ActionRegistry,
+    private readonly getShortcut: (actionId: string) => string | null = () => null
+  ) {
     this.overlay.className = 'command-palette';
     this.overlay.hidden = true;
     this.overlay.innerHTML = '<div class="command-palette-panel"></div>';
@@ -19,10 +23,12 @@ export class CommandPalette {
 
     this.input.className = 'command-palette-input';
     this.input.type = 'search';
-    this.input.placeholder = 'Run command';
+    this.input.placeholder = 'Search commands';
     this.input.autocomplete = 'off';
+    this.input.ariaLabel = 'Search commands';
 
     this.list.className = 'command-palette-list';
+    this.list.role = 'listbox';
     panel.append(this.input, this.list);
     document.body.append(this.overlay);
 
@@ -61,8 +67,20 @@ export class CommandPalette {
       const button = document.createElement('button');
       button.type = 'button';
       button.className = index === this.selectedIndex ? 'command-palette-item is-selected' : 'command-palette-item';
-      button.textContent = action.title;
       button.dataset.actionId = action.id;
+      button.role = 'option';
+      button.ariaSelected = String(index === this.selectedIndex);
+      const title = document.createElement('span');
+      title.className = 'command-palette-title';
+      title.textContent = action.title;
+      button.append(title);
+      const shortcut = this.getShortcut(action.id);
+      if (shortcut) {
+        const hint = document.createElement('kbd');
+        hint.className = 'shortcut-hint';
+        hint.textContent = formatShortcut(shortcut);
+        button.append(hint);
+      }
       button.addEventListener('click', () => {
         void this.runAction(action.id);
       });
@@ -115,6 +133,7 @@ export class CommandPalette {
     const items = [...this.list.querySelectorAll<HTMLButtonElement>('.command-palette-item')];
     for (const [index, item] of items.entries()) {
       item.classList.toggle('is-selected', index === this.selectedIndex);
+      item.ariaSelected = String(index === this.selectedIndex);
       if (index === this.selectedIndex) {
         item.scrollIntoView({ block: 'nearest' });
       }

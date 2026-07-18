@@ -8,6 +8,8 @@
   --color-panel-text: #d4d4d4;
   --color-statusbar: #007acc;
   --color-statusbar-text: #fff;
+  --color-muted: color-mix(in srgb, var(--color-fg), transparent 42%);
+  --color-surface-raised: color-mix(in srgb, var(--color-panel), #000 12%);
   --font-ui: "Segoe UI", sans-serif;
 }
 
@@ -31,9 +33,22 @@ button {
   font: inherit;
 }
 
+button,
+input,
+select,
+textarea {
+  border-radius: 4px;
+}
+
+.ui-icon {
+  width: 16px;
+  height: 16px;
+  flex: 0 0 auto;
+}
+
 .app-shell {
   display: grid;
-  grid-template-rows: 36px minmax(0, 1fr) 24px;
+  grid-template-rows: 42px minmax(0, 1fr) 24px;
   width: 100%;
   height: 100%;
 }
@@ -47,16 +62,36 @@ button {
 }
 
 .topbar {
-  gap: 12px;
-  padding: 0 10px;
+  gap: 10px;
+  padding: 0 8px 0 12px;
   color: var(--color-panel-text);
   background: var(--color-panel);
 }
 
 .brand {
+  display: flex;
+  align-items: center;
+  gap: 7px;
   flex: 0 0 auto;
   font-size: 13px;
   font-weight: 600;
+}
+
+.brand-mark {
+  display: inline-grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  color: #fff;
+  font-family: Consolas, monospace;
+  font-size: 11px;
+  letter-spacing: -1px;
+  background: var(--color-accent);
+  border-radius: 6px;
+}
+
+.brand-name {
+  letter-spacing: 0.01em;
 }
 
 .tabs {
@@ -71,8 +106,8 @@ button {
 .tab-item {
   position: relative;
   display: flex;
-  min-width: 116px;
-  max-width: 180px;
+  min-width: 124px;
+  max-width: 200px;
   height: 100%;
   border-left: 1px solid color-mix(in srgb, var(--color-panel), #fff 8%);
 }
@@ -118,19 +153,41 @@ button {
 .topbar-actions {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
   flex: 0 0 auto;
 }
 
 .topbar-action {
-  display: inline-grid;
-  place-items: center;
-  width: 26px;
-  height: 26px;
-  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 30px;
+  height: 30px;
+  padding: 0 9px;
   color: var(--color-panel-text);
   background: transparent;
   border: 1px solid color-mix(in srgb, var(--color-panel), #fff 14%);
+}
+
+.topbar-action.is-primary {
+  color: #fff;
+  background: color-mix(in srgb, var(--color-accent), transparent 12%);
+  border-color: color-mix(in srgb, var(--color-accent), #fff 12%);
+}
+
+.topbar-action-label {
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.topbar-shortcut {
+  color: color-mix(in srgb, currentColor, transparent 34%);
+  font-family: inherit;
+  font-size: 10px;
+  white-space: nowrap;
+  background: transparent;
+  border: 0;
 }
 
 .topbar-action:hover,
@@ -179,7 +236,7 @@ button {
 
 .terminal-pane {
   display: grid;
-  grid-template-rows: 28px minmax(0, 1fr);
+  grid-template-rows: 30px minmax(0, 1fr);
   outline: 1px solid transparent;
   outline-offset: -1px;
 }
@@ -203,8 +260,8 @@ button {
   justify-content: space-between;
   gap: 8px;
   min-width: 0;
-  height: 28px;
-  padding: 0 6px 0 8px;
+  height: 30px;
+  padding: 0 5px 0 9px;
   background: color-mix(in srgb, var(--color-terminal-bg), var(--color-panel) 58%);
   border-bottom: 1px solid color-mix(in srgb, var(--color-bg), #fff 10%);
 }
@@ -223,7 +280,7 @@ button {
   text-overflow: ellipsis;
   white-space: nowrap;
   font-size: 12px;
-  font-weight: 600;
+  font-weight: 500;
 }
 
 .pane-status {
@@ -245,17 +302,60 @@ button {
   align-items: center;
   gap: 2px;
   flex: 0 0 auto;
+  opacity: 0;
+  transform: translateX(2px);
+  transition: opacity 120ms ease, transform 120ms ease;
+}
+
+.terminal-pane.is-focused .pane-actions,
+.terminal-pane:hover .pane-actions,
+.terminal-pane:focus-within .pane-actions {
+  opacity: 1;
+  transform: translateX(0);
 }
 
 .pane-action {
+  position: relative;
   display: inline-grid;
   place-items: center;
-  width: 24px;
-  height: 22px;
+  width: 26px;
+  height: 24px;
   padding: 0;
   color: var(--color-panel-text);
   background: transparent;
   border: 1px solid transparent;
+}
+
+.pane-action[data-action-id="closePane"]:hover,
+.pane-action[data-action-id="closePane"]:focus-visible {
+  color: #fff;
+  background: #c42b1c;
+  border-color: #e86b60;
+}
+
+.pane-action::after {
+  position: absolute;
+  top: calc(100% + 7px);
+  right: 0;
+  z-index: 12;
+  display: none;
+  width: max-content;
+  max-width: 260px;
+  padding: 5px 7px;
+  color: var(--color-fg);
+  font-size: 11px;
+  line-height: 1.35;
+  content: attr(data-tooltip);
+  background: color-mix(in srgb, var(--color-panel), #000 28%);
+  border: 1px solid color-mix(in srgb, var(--color-panel), #fff 18%);
+  border-radius: 4px;
+  box-shadow: 0 7px 20px rgb(0 0 0 / 42%);
+  pointer-events: none;
+}
+
+.pane-action:hover::after,
+.pane-action:focus-visible::after {
+  display: block;
 }
 
 .pane-action:hover,
@@ -280,6 +380,12 @@ button {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.status-mode {
+  flex: 0 0 auto;
+  margin-left: 12px;
+  opacity: 0.78;
 }
 
 .command-palette {
@@ -321,12 +427,355 @@ button {
 }
 
 .command-palette-item {
-  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  min-height: 40px;
   padding: 0 12px;
   color: var(--color-panel-text);
   text-align: left;
   background: transparent;
   border: 0;
+}
+
+.command-palette-title {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.shortcut-hint {
+  flex: 0 0 auto;
+  padding: 2px 6px;
+  color: color-mix(in srgb, var(--color-panel-text), transparent 22%);
+  font-family: var(--font-ui);
+  font-size: 10px;
+  line-height: 1.4;
+  background: color-mix(in srgb, var(--color-panel), #fff 6%);
+  border: 1px solid color-mix(in srgb, var(--color-panel), #fff 14%);
+  border-radius: 4px;
+  box-shadow: inset 0 -1px 0 rgb(0 0 0 / 30%);
+}
+
+.shortcut-hint.is-unassigned {
+  color: var(--color-muted);
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
+}
+
+.settings-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: flex;
+  justify-content: flex-end;
+  background: rgb(0 0 0 / 54%);
+  backdrop-filter: blur(2px);
+}
+
+.settings-overlay[hidden] {
+  display: none;
+}
+
+.settings-panel {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  width: min(620px, calc(100vw - 44px));
+  height: 100%;
+  color: var(--color-fg);
+  background: color-mix(in srgb, var(--color-bg), #000 8%);
+  border-left: 1px solid color-mix(in srgb, var(--color-panel), #fff 16%);
+  box-shadow: -20px 0 54px rgb(0 0 0 / 38%);
+  animation: settings-enter 150ms ease-out;
+}
+
+@keyframes settings-enter {
+  from {
+    opacity: 0.6;
+    transform: translateX(18px);
+  }
+}
+
+.settings-header {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 24px 26px 20px;
+  background: var(--color-surface-raised);
+  border-bottom: 1px solid color-mix(in srgb, var(--color-panel), #fff 11%);
+}
+
+.settings-eyebrow {
+  margin-bottom: 5px;
+  color: var(--color-accent);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.settings-header h2,
+.settings-header p,
+.settings-section h3,
+.settings-section p {
+  margin: 0;
+}
+
+.settings-header h2 {
+  font-size: 22px;
+  line-height: 1.2;
+}
+
+.settings-header p {
+  margin-top: 6px;
+  color: var(--color-muted);
+  font-size: 12px;
+}
+
+.settings-close {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  color: var(--color-panel-text);
+  background: transparent;
+  border: 1px solid transparent;
+}
+
+.settings-close:hover,
+.settings-close:focus-visible {
+  background: color-mix(in srgb, var(--color-panel), #fff 8%);
+  border-color: color-mix(in srgb, var(--color-panel), #fff 16%);
+  outline: 0;
+}
+
+.settings-form {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.settings-section {
+  padding: 22px 26px;
+  border-bottom: 1px solid color-mix(in srgb, var(--color-panel), #fff 9%);
+}
+
+.settings-section-heading {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.settings-section h3 {
+  font-size: 14px;
+}
+
+.settings-section p {
+  margin-top: 4px;
+  color: var(--color-muted);
+  font-size: 11px;
+}
+
+.settings-section code {
+  color: color-mix(in srgb, var(--color-accent), #fff 26%);
+  font-family: Consolas, monospace;
+}
+
+.settings-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+  gap: 14px;
+}
+
+.settings-field {
+  display: grid;
+  align-content: start;
+  gap: 7px;
+  min-width: 0;
+  color: color-mix(in srgb, var(--color-fg), transparent 12%);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.settings-field-wide {
+  grid-column: 1 / -1;
+}
+
+.settings-field small {
+  color: var(--color-muted);
+  font-size: 10px;
+  font-weight: 400;
+}
+
+.settings-field input,
+.settings-field select,
+.settings-field textarea {
+  width: 100%;
+  min-width: 0;
+  padding: 8px 9px;
+  color: var(--color-fg);
+  font: inherit;
+  font-weight: 400;
+  background: color-mix(in srgb, var(--color-terminal-bg), #fff 4%);
+  border: 1px solid color-mix(in srgb, var(--color-panel), #fff 15%);
+  outline: 0;
+}
+
+.settings-field input,
+.settings-field select {
+  height: 34px;
+}
+
+.settings-field textarea {
+  resize: vertical;
+  font-family: Consolas, monospace;
+  line-height: 1.45;
+}
+
+.settings-field input:focus,
+.settings-field select:focus,
+.settings-field textarea:focus {
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-accent), transparent 72%);
+}
+
+.settings-shortcuts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1px;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--color-panel), #fff 8%);
+  border: 1px solid color-mix(in srgb, var(--color-panel), #fff 10%);
+  border-radius: 5px;
+}
+
+.settings-shortcut-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-width: 0;
+  min-height: 38px;
+  padding: 7px 9px;
+  font-size: 11px;
+  background: color-mix(in srgb, var(--color-bg), #fff 2%);
+}
+
+.settings-shortcut-row > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.settings-footer {
+  position: sticky;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  min-height: 66px;
+  margin-top: auto;
+  padding: 12px 26px;
+  background: color-mix(in srgb, var(--color-panel), #000 14%);
+  border-top: 1px solid color-mix(in srgb, var(--color-panel), #fff 11%);
+}
+
+.settings-status {
+  min-width: 0;
+  color: var(--color-muted);
+  font-size: 11px;
+}
+
+.settings-footer-actions {
+  display: flex;
+  gap: 8px;
+  flex: 0 0 auto;
+}
+
+.button-primary,
+.button-secondary {
+  min-width: 92px;
+  height: 32px;
+  padding: 0 12px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.button-primary {
+  color: #fff;
+  background: var(--color-accent);
+  border: 1px solid color-mix(in srgb, var(--color-accent), #fff 18%);
+}
+
+.button-primary:hover,
+.button-primary:focus-visible {
+  background: color-mix(in srgb, var(--color-accent), #fff 10%);
+  outline: 0;
+}
+
+.button-primary:disabled {
+  opacity: 0.62;
+}
+
+.button-secondary {
+  color: var(--color-fg);
+  background: transparent;
+  border: 1px solid color-mix(in srgb, var(--color-panel), #fff 16%);
+}
+
+.button-secondary:hover,
+.button-secondary:focus-visible {
+  background: color-mix(in srgb, var(--color-panel), #fff 7%);
+  outline: 0;
+}
+
+@media (max-width: 920px) {
+  .topbar-action-label,
+  .topbar-shortcut,
+  .brand-name {
+    display: none;
+  }
+
+  .topbar-action {
+    justify-content: center;
+    width: 30px;
+    padding: 0;
+  }
+}
+
+@media (max-width: 620px) {
+  .settings-panel {
+    width: 100%;
+  }
+
+  .settings-grid,
+  .settings-shortcuts {
+    grid-template-columns: 1fr;
+  }
+
+  .settings-footer {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .settings-footer-actions > button {
+    flex: 1 1 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .settings-panel {
+    animation: none;
+  }
 }
 
 .command-palette-item:hover,

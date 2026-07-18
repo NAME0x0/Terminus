@@ -40,6 +40,7 @@ export class ActionRegistry {
 export function createActionRegistry(
   layout: LayoutController,
   openPalette: () => void,
+  openSettings: () => void,
   reportError: ErrorReporter = () => {}
 ): ActionRegistry {
   const registry = new ActionRegistry(reportError);
@@ -64,6 +65,7 @@ export function createActionRegistry(
   register('paste', 'Paste', () => layout.focused()?.paste());
   register('find', 'Find in pane', () => layout.focused()?.find());
   register('commandPalette', 'Open command palette', openPalette);
+  register('settings', 'Open settings', openSettings);
 
   return registry;
 }

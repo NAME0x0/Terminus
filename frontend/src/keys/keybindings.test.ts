@@ -52,6 +52,28 @@ describe('keybindings', () => {
 
     expect(runs).toBe(0);
   });
+
+  it('does not intercept shortcuts while editing a select or contenteditable field', () => {
+    const actions = new ActionRegistry();
+    let runs = 0;
+    actions.register({
+      id: 'newTab',
+      title: 'New tab',
+      run: () => {
+        runs += 1;
+      }
+    });
+    binding = bindKeybindings(configWith({ 'Ctrl+N': 'newTab' }), actions);
+    const select = document.createElement('select');
+    const editable = document.createElement('div');
+    editable.contentEditable = 'true';
+    document.body.append(select, editable);
+
+    select.dispatchEvent(new KeyboardEvent('keydown', { key: 'n', ctrlKey: true, bubbles: true }));
+    editable.dispatchEvent(new KeyboardEvent('keydown', { key: 'n', ctrlKey: true, bubbles: true }));
+
+    expect(runs).toBe(0);
+  });
 });
 
 function configWith(keybindings: Record<string, string>): AppConfig {

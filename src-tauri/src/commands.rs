@@ -3,7 +3,7 @@ use std::path::PathBuf;
 use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, State};
 
-use crate::config::{load_config, Config};
+use crate::config::{load_config, save_config as persist_config, Config};
 use crate::pty::PtySize;
 use crate::AppState;
 
@@ -122,6 +122,12 @@ pub fn close_terminal(
 #[tauri::command]
 pub fn get_config() -> Result<Config, String> {
     load_config().map_err(|err| err.to_string())
+}
+
+#[tauri::command]
+pub fn save_config(config: Config) -> Result<Config, String> {
+    persist_config(&config).map_err(|err| err.to_string())?;
+    Ok(config)
 }
 
 fn default_shell() -> String {

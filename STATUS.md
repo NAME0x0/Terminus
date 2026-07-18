@@ -86,9 +86,9 @@ evidence and is not the active product roadmap.
   PTY sessions via `portable-pty`, and session management.
 - `frontend/` — plain TypeScript/Vite frontend with xterm panes, tabs, splits,
   keybinding dispatch, and theme-to-CSS/xterm mapping.
-- E0 polish now includes pane headers/actions, lifecycle states, focused-pane
-  status, split cwd inheritance, resize debounce, pane maximize, focus cycling,
-  and a command-palette/action-registry foundation.
+- E0 polish now includes focused pane-only actions, lifecycle states, shortcut
+  discovery, split cwd inheritance, resize debounce, pane maximize, focus
+  cycling, a command palette, and in-app Settings backed by the TOML config.
 - Pane rendering now tracks whether a terminal has mounted independently from
   current DOM attachment, preserving pane sessions through split, tab,
   maximize/restore, and close re-renders. Eleven jsdom/Vitest regressions cover
@@ -107,9 +107,9 @@ evidence and is not the active product roadmap.
 - Frontend failures now surface through bounded, dismissible notices; shell
   spawn failures remain inline and fatal startup failures offer retry. Listener
   registration cleans up partial success before retrying.
-- Twenty-one Vitest cases cover layout, tabs, spatial focus, config/theme/
-  keybinding application, action failures, notices, and event registration.
-  Eight Rust tests cover config, PTY/session lifecycle, interactive shell
+- Twenty-six Vitest cases cover layout, tabs, spatial focus, config/theme/
+  keybinding application, Settings, action failures, notices, and event
+  registration. Nine Rust tests cover config, PTY/session lifecycle, interactive shell
   input/resize, ANSI VT preservation, and sustained output.
 - `.github/workflows/ci.yml` defines the Windows/macOS/Ubuntu typecheck, test,
   format, Clippy, PTY smoke, and optimized-build matrix. The contract parses

@@ -75,6 +75,11 @@ pub fn load_config() -> Result<Config, ConfigError> {
     load_config_at(&path)
 }
 
+pub fn save_config(config: &Config) -> Result<(), ConfigError> {
+    let path = config_path()?;
+    write_config_at(&path, config)
+}
+
 pub fn start_config_watcher<F>(on_reload: F) -> Result<ConfigWatcher, ConfigError>
 where
     F: Fn(Config) + Send + 'static,
@@ -111,10 +116,14 @@ fn config_path() -> Result<PathBuf, ConfigError> {
 }
 
 fn write_default_config(path: &Path) -> Result<(), ConfigError> {
+    write_config_at(path, &Config::default())
+}
+
+fn write_config_at(path: &Path, config: &Config) -> Result<(), ConfigError> {
     if let Some(parent) = path.parent() {
         fs::create_dir_all(parent)?;
     }
-    let raw = toml::to_string_pretty(&Config::default())?;
+    let raw = toml::to_string_pretty(config)?;
     fs::write(path, raw)?;
     Ok(())
 }
@@ -174,6 +183,7 @@ fn default_keybindings() -> HashMap<String, String> {
             "toggleMaximizePane".to_string(),
         ),
         ("Ctrl+Shift+P".to_string(), "commandPalette".to_string()),
+        ("Ctrl+,".to_string(), "settings".to_string()),
         ("Ctrl+Shift+}".to_string(), "focusNextPane".to_string()),
         ("Ctrl+Shift+{".to_string(), "focusPreviousPane".to_string()),
         ("Ctrl+Alt+ArrowUp".to_string(), "focusPaneUp".to_string()),
@@ -208,6 +218,7 @@ mod tests {
         assert_eq!(config.appearance.theme, "default");
         assert_eq!(config.appearance.font_family, "Cascadia Code");
         assert_eq!(config.keybindings["Ctrl+Shift+T"], "newTab");
+        assert_eq!(config.keybindings["Ctrl+,"], "settings");
     }
 
     #[test]
@@ -275,6 +286,26 @@ mod tests {
 
         assert_eq!(reloaded.appearance.font_size, 18);
         drop(_watcher);
+        fs::remove_dir_all(directory).expect("remove test config directory");
+    }
+
+    #[test]
+    fn saved_config_round_trips() {
+        let directory = unique_test_directory("save-config");
+        let path = directory.join("config.toml");
+        let mut config = Config::default();
+        config.appearance.font_family = "JetBrains Mono".to_string();
+        config.appearance.font_size = 17;
+        config.shell.program = Some("custom-shell".to_string());
+        config.shell.args = vec!["--login".to_string()];
+
+        write_config_at(&path, &config).expect("save config");
+        let loaded = load_config_at(&path).expect("reload saved config");
+
+        assert_eq!(loaded.appearance.font_family, "JetBrains Mono");
+        assert_eq!(loaded.appearance.font_size, 17);
+        assert_eq!(loaded.shell.program.as_deref(), Some("custom-shell"));
+        assert_eq!(loaded.shell.args, ["--login"]);
         fs::remove_dir_all(directory).expect("remove test config directory");
     }
 

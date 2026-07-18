@@ -9,6 +9,8 @@ import { WebglAddon } from '@xterm/addon-webgl';
 import type { ITheme } from '@xterm/xterm';
 import type { AppConfig } from '../config/types';
 import type { ErrorReporter } from '../errors/ErrorCenter';
+import { actionHint } from '../keys/shortcutHints';
+import { createIcon, type IconName } from '../ui/icons';
 import { startTerminalEventStream } from './TerminalEvents';
 
 interface CreateTerminalResponse {
@@ -42,6 +44,7 @@ export class TerminalPane {
   private readonly header = document.createElement('div');
   private readonly titleElement = document.createElement('div');
   private readonly statusElement = document.createElement('div');
+  private readonly paneActionButtons = new Map<PaneCommand, HTMLButtonElement>();
   private readonly terminalHost: HTMLDivElement;
   private readonly term: Terminal;
   private readonly fitAddon = new FitAddon();
@@ -183,6 +186,7 @@ export class TerminalPane {
     this.term.options.fontFamily = config.appearance.fontFamily;
     this.term.options.fontSize = config.appearance.fontSize;
     this.term.options.theme = theme;
+    this.updateActionHints();
     requestAnimationFrame(() => this.fitAndResizeBackend());
   }
 
@@ -352,28 +356,45 @@ export class TerminalPane {
   private createPaneActions(): HTMLElement {
     const actions = document.createElement('div');
     actions.className = 'pane-actions';
+    actions.ariaLabel = 'Focused pane actions';
     actions.append(
-      this.actionButton('-', 'Split down', 'splitHorizontal'),
-      this.actionButton('|', 'Split right', 'splitVertical'),
-      this.actionButton('[]', 'Maximize or restore pane', 'toggleMaximizePane'),
-      this.actionButton('x', 'Close pane', 'closePane')
+      this.actionButton('splitRight', 'Split right', 'splitVertical'),
+      this.actionButton('splitDown', 'Split down', 'splitHorizontal'),
+      this.actionButton('maximize', 'Maximize or restore pane', 'toggleMaximizePane'),
+      this.actionButton('close', 'Close pane', 'closePane')
     );
     return actions;
   }
 
-  private actionButton(label: string, title: string, command: PaneCommand): HTMLButtonElement {
+  private actionButton(icon: IconName, title: string, command: PaneCommand): HTMLButtonElement {
     const button = document.createElement('button');
     button.type = 'button';
     button.className = 'pane-action';
-    button.title = title;
-    button.ariaLabel = title;
-    button.textContent = label;
+    button.dataset.actionId = command;
+    button.dataset.title = title;
+    button.append(createIcon(icon));
+    this.paneActionButtons.set(command, button);
     button.addEventListener('click', (event) => {
       event.stopPropagation();
       this.onFocus(this);
       this.onCommand(command, this);
     });
+    this.updateActionHint(button, command);
     return button;
+  }
+
+  private updateActionHints(): void {
+    for (const [command, button] of this.paneActionButtons) {
+      this.updateActionHint(button, command);
+    }
+  }
+
+  private updateActionHint(button: HTMLButtonElement, command: PaneCommand): void {
+    const title = button.dataset.title ?? command;
+    const hint = actionHint(title, this.config.keybindings, command);
+    button.title = hint;
+    button.ariaLabel = hint;
+    button.dataset.tooltip = hint;
   }
 
   private updateChrome(): void {

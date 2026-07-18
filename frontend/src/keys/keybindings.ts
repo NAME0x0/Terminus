@@ -9,7 +9,17 @@ export interface KeybindingBinding {
 export function bindKeybindings(config: AppConfig, actions: ActionRegistry): KeybindingBinding {
   let keybindings = config.keybindings;
   const handleKeydown = (event: KeyboardEvent) => {
-    if (event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement) {
+    const target = event.target;
+    if (
+      target instanceof HTMLInputElement ||
+      target instanceof HTMLSelectElement ||
+      target instanceof HTMLTextAreaElement ||
+      (target instanceof HTMLElement &&
+        (target.isContentEditable ||
+          target.contentEditable === 'true' ||
+          target.contentEditable === 'plaintext-only' ||
+          target.closest('[contenteditable="true"], [contenteditable="plaintext-only"]') !== null))
+    ) {
       return;
     }
 

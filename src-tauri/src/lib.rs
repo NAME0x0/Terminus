@@ -32,7 +32,8 @@ pub fn run() {
             commands::write_stdin,
             commands::resize,
             commands::close_terminal,
-            commands::get_config
+            commands::get_config,
+            commands::save_config
         ])
         .run(tauri::generate_context!())
         .expect("failed to run Terminus");
