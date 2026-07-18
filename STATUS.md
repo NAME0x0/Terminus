@@ -1,7 +1,7 @@
 # Terminus — Project Status
 
 > Living document. Tracks vision vs. reality, build state, and decisions.
-> Last updated: 2026-07-17
+> Last updated: 2026-07-18
 >
 > See also: **`VISION.md`** (north-star) ·
 > **`docs/product/terminus-v0.1-product-brief.md`** (first public release) ·
@@ -24,13 +24,12 @@ persistent-workspace contract in `docs/product/terminus-v0.1-product-brief.md`.
 
 ## 2. Current Reality (one line)
 
-An uncommitted Tauri/Rust + Vite/TypeScript E0 prototype now exists beside the
-stale C++/wxWidgets scaffold. It typechecks, passes eight Rust tests and 21
-frontend tests, and produces a Windows release executable. The cross-platform
-CI contract exists and Windows automated PTY smoke passes, but remote CI and
-the native-app manual smoke matrix remain unverified, so E0
-acceptance is incomplete and the implementation has not been published to
-GitHub.
+A published Tauri/Rust + Vite/TypeScript E0 implementation now exists beside
+the stale C++/wxWidgets scaffold on draft PR
+[#1](https://github.com/NAME0x0/Terminus/pull/1). It typechecks, passes eight
+Rust tests and 21 frontend tests, and builds on Windows, macOS, and Ubuntu in
+GitHub Actions. The native-app manual smoke matrix remains unverified, so E0
+acceptance is incomplete and the PR remains a draft.
 
 ## 3. Tech Stack
 
@@ -222,8 +221,8 @@ evidence and is not the active product roadmap.
    and implement geometry-based directional focus.
 8. ✅ Add recoverable frontend error handling, broader E0 edge/integration
    coverage, and the Windows/macOS/Linux CI contract.
-9. ⏳ Windows automated PTY smoke passes; run the remote CI matrix and the
-   documented native-app compatibility suite before accepting E0.
+9. ⏳ The Windows/macOS/Ubuntu CI matrix passes; run and record the documented
+   native-app compatibility suite on all three platforms before accepting E0.
 10. ⏳ Remove the stale C++ tree in a separate cleanup change after the
    replacement is protected and reviewable.
 11. ⏳ Design and implement E1 persistence against the v0.1 product brief.
