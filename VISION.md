@@ -1,108 +1,134 @@
-# Terminus — Vision (North-Star)
+# Terminus — Product Vision
 
-> The long-range destination. Not a v0.1 scope. We build toward this one brick
-> at a time; v0.1 is only Epic E0. Last updated: 2026-06-22.
+> Long-range product direction. Last updated: 2026-07-17.
 
-## One line
+## North star
 
-**Terminus is a terminal-native workspace** — a cross-platform terminal at the
-center, with media, web, and AI as first-class panes, fully mouse-interactive
-like a desktop app, and AI woven throughout via one provider-agnostic gateway.
+**Terminus is a local-first, persistent workspace for developers who run
+multiple shells, tools, and coding agents.** It keeps terminal work organized,
+visible, and resumable without requiring a cloud account.
 
-Think: Warp × Wave × Arc browser × a media center, fused around a real terminal.
-"Replace the desktop" is the spirit; a workspace you live in is the product.
+The terminal is the foundation, not the complete product. Terminus becomes
+valuable when a developer can give project work a durable home, leave it, and
+return without reconstructing terminals, directories, and layout by hand.
 
-## Design Pillars (cross-cutting — apply from E0 onward)
+## Who it is for
 
-1. **Real terminal first.** PTY + a proven VT engine (xterm.js). It must run
-   `vim`, `htop`, `ssh`, TUIs correctly on Windows, macOS, Linux. Everything
-   else is worthless if the terminal isn't excellent.
-2. **Editor-grade mouse + keyboard.** Fully interactive like Word/Notepad:
-   drag panes, drag-and-drop, click-to-position, Word-style text selection,
-   context menus — alongside keyboard-first / vim navigation. Not either/or.
-3. **Panes are content.** A pane can be a terminal, an image, a video, a file
-   preview, a browser, a widget, or an AI chat. One pane/layout system, many
-   content types.
-4. **AI everywhere, provider-agnostic.** One gateway interface. Behind it:
-   local tiny model, any OpenAI-compatible endpoint, Gemini, NVIDIA NIM, and
-   agents (Claude Code, Codex, custom). Cost-aware by default (free/local first).
-5. **Cross-platform, lightweight.** Tauri (Rust core + web UI, native webview).
-   ~10MB binary, low RAM. No Electron tax.
-6. **Themeable & scriptable.** JSON/TOML theming now; Lua (`mlua`) + plugin API
-   later. Import iTerm / Windows Terminal themes.
+The first user is a developer or technical power user who routinely coordinates
+several terminal processes: shells, editors, dev servers, test watchers, SSH
+sessions, infrastructure tools, and coding-agent CLIs.
 
-## Tech Stack
+They are not looking for a literal desktop replacement. They want a focused,
+local workspace that makes complex terminal work easier to see, manage, and
+resume.
 
-| Layer        | Choice                                          |
-|--------------|-------------------------------------------------|
-| Core         | Rust (Tauri backend)                            |
-| UI           | Web (TS + Vite) in native webview               |
-| Terminal eng | xterm.js (+ webgl, search, web-links, fit addons) |
-| PTY          | `portable-pty` (ConPTY / forkpty)               |
-| AI           | provider-agnostic gateway (local + cloud + agents) |
-| Scripting    | Lua via `mlua` (later)                          |
-| Build        | Cargo + Tauri CLI                               |
-| Targets      | Windows · macOS · Linux                         |
+## Core job
 
-## Epics (each = its own spec → plan → build cycle)
+When work on a project spans multiple terminal tools, help the user preserve the
+organization and context of that work so stopping and resuming is inexpensive.
 
-Order is a sketch, adjustable per epic.
+## First switching reason
 
-### E0 — Terminal core  ← **v0.1, building now**
-PTY + xterm.js, tabs + splits (split-tree), theming, TOML config, modern
-rendering (true color, WebGL, OSC 8 hyperlinks, scrollback search), OSC 7 cwd
-(splits inherit dir, tab titles show path). Cross-platform CI from day 1.
-Full spec: `docs/superpowers/specs/2026-06-22-terminus-v0.1-terminal-core-design.md`.
+Open a named project workspace, arrange the terminals needed for that project,
+close Terminus, and return later to the same tabs, pane layout, and working
+directories.
 
-### E1 — Interactive shell
-OSC 133 shell integration → **command blocks** (each command+output a navigable,
-copyable, rerunnable unit), prompt jump, per-command exit-status badges, sticky
-command header. Plus the editor-grade mouse pillar: drag panes, drag-and-drop
-into terminal, Word/Notepad-style selection, context menus.
+Terminal correctness is mandatory, but it is not enough to make someone switch.
+The durable workspace is the product wedge.
 
-### E2 — Multiplexer
-Session persistence/restore (reopen tabs/splits/cwd after restart), tmux-like
-**detach/attach** (terminal survives UI close via a background daemon),
-broadcast/sync input across panes, saved layout presets per project.
+## Product principles
 
-### E3 — AI gateway
-One provider abstraction. Adapters: **local tiny model** (Ollama / llama.cpp /
-candle) for offline NL→command, **OpenAI-compatible** endpoints (LM Studio,
-Ollama, vLLM, OpenRouter, Groq, …), **Gemini** (free tier), **NVIDIA NIM**, and
-**agents** (Claude Code, Codex, custom) as first-class. Features: natural-language
-→ command, explain-this-error, fix-the-command, agent panes. Cost-aware routing
-(prefer local/free).
+1. **Real terminal first.** PTY-backed sessions and a proven VT engine must run
+   shells, SSH, editors, and TUIs correctly. Product features cannot compensate
+   for an unreliable terminal.
+2. **Workspaces are durable.** Project identity, tabs, panes, layout, focus, and
+   cwd should survive restart. Process survival is a separate, later capability.
+3. **Local-first and inspectable.** Core use requires no account or network.
+   Saved state belongs to the user and can be inspected or cleared.
+4. **Panes are the common model.** A pane begins as a terminal and can later
+   host an agent, file, image, browser, or other content without inventing a
+   second workspace system.
+5. **Clear lifecycle over hidden magic.** Starting, running, failed, exited, and
+   restored state must be visible. Errors should be actionable rather than
+   silently swallowed.
+6. **Keyboard and mouse are peers.** Fast actions and shortcuts coexist with
+   predictable focus, selection, resizing, drag/drop, and context menus.
+7. **Cross-platform by contract.** Windows, macOS, and Linux behavior is held by
+   automated tests and CI, not only by portable dependencies.
+8. **Agents extend the workspace.** External coding agents should work naturally
+   as terminal processes before Terminus adds provider integrations or agent
+   abstractions.
 
-### E4 — Content panes
-Pane content framework beyond terminals: **image viewer**, **video player**,
-**file preview** (text/markdown/code/pdf). Inline image protocol (Sixel / kitty
-graphics) in the terminal itself too.
+## Milestone model
 
-### E5 — Embedded browser
-Web pane via Tauri webview — browse arbitrary sites in-app, dock alongside
-terminals. Arc-like split browsing inside the workspace.
+Engineering milestones and product releases are deliberately separate.
 
-### E6 — Integrations
-**Spotify** (Web Playback SDK + Web API) as a media widget; framework for other
-service widgets (calendar, weather, system monitor, clock).
+### E0 — Terminal Foundation
 
-### E7 — Power QoL
-Command palette (fuzzy actions), shell **profiles** (pwsh / bash / wsl /
-git-bash / ssh), **SSH connection manager** (saved hosts), **quake** dropdown
-global-hotkey terminal, notify-on-command-complete.
+An internal technical milestone: PTY lifecycle, xterm rendering, tabs, splits,
+themes, config, keybindings, cwd tracking, tests, and cross-platform CI. E0
+proves that the foundation is trustworthy; it is not itself a public release.
 
-### E8 — Extensibility
-Lua (`mlua`) scripting for keybindings/behavior, plugin API, theme import
-(iTerm / Windows Terminal), community theme ecosystem.
+Technical design:
+`docs/superpowers/specs/2026-06-22-terminus-e0-terminal-foundation-design.md`.
 
-## Explicitly NOT doing (for now)
+### v0.1 Public Preview — Persistent Project Workspaces
 
-- Literal OS shell replacement (replacing `explorer.exe`). Tagline only.
-- Mobile.
-- Anything in an epic before its turn. Scope discipline is how this ships.
+The first publicly valuable release combines accepted E0 behavior with named,
+local workspaces that restore tabs, split-tree layout, focus, shell profiles,
+and cwd. Restored panes start replacement shells in the saved directories; v0.1
+does not promise that child processes survive application exit.
 
-## Provenance
+Product contract: `docs/product/terminus-v0.1-product-brief.md`.
 
-Supersedes the abandoned 2025 C++/wxWidgets scaffold (tmux + yazi + Rainmeter
-idea). That design is considered stale; this north-star replaces it. Old C++
-remains in-tree pending deletion; git history preserves it regardless.
+## Roadmap after the foundation
+
+The order reflects user value and dependency, not feature spectacle.
+
+### E1 — Persistent Project Workspaces  ← **v0.1 product milestone**
+
+Named workspaces, optional project roots, local layout/cwd persistence, restore,
+workspace switching, explicit reset/clear behavior, and crash-safe state writes.
+
+### E2 — Workspace Power UX
+
+Excellent pane manipulation, drag/drop and resizing, shell profiles, saved
+layouts, project actions, SSH entry points, and eventually background process
+continuity through an explicit detach/attach service.
+
+### E3 — Agent-Aware Workflows
+
+Make external coding agents easy to launch, identify, supervise, and target from
+the workspace. Add structured agent state and provider integrations only after
+ordinary agent CLIs work well inside durable terminal workspaces.
+
+### E4 — Command Intelligence
+
+OSC 133 shell integration, command lifecycle metadata, searchable command
+records, blocks, replay, exit status, and copy/share operations. Raw PTY bytes
+remain the compatibility source of truth.
+
+### E5 — Content and Browser Panes
+
+Extend the shared pane model to files, Markdown, images, video, previews, and
+web content where those formats directly support project work.
+
+### E6 — Integrations and Extensibility
+
+Local and cloud AI adapters, service integrations, Lua scripting, plugin APIs,
+theme import, and community extensions. Each addition must strengthen the core
+workspace rather than turn Terminus into an unrelated app collection.
+
+## Explicit non-goals
+
+- Replacing the operating-system shell or desktop environment.
+- Shipping a generic media center, browser, or widget dashboard.
+- Requiring an account, cloud sync, or hosted AI service for core operation.
+- Adding built-in AI before terminal and workspace reliability are proven.
+- Building every roadmap item before releasing useful software.
+
+## Decision filter
+
+A proposed feature belongs in Terminus when it makes terminal-based project
+work easier to organize, understand, resume, or extend. If it does not reinforce
+that job, it should not enter the roadmap merely because it can fit in a pane.

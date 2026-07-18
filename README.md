@@ -1,84 +1,136 @@
 # Terminus
 
-A Windows-based terminal designed to replace the full desktop, combining terminal and desktop features for a modern, efficient user experience.
+Terminus is a local-first, persistent workspace for developers who run multiple
+shells, tools, and coding agents. It keeps terminal work organized, visible,
+and resumable without requiring a cloud account.
 
-## Features
+The project is currently building **E0 — Terminal Foundation**, an internal
+technical milestone based on Tauri, Rust, TypeScript, xterm.js, and
+`portable-pty`. E0 is not the public product release.
 
-- **Widget Support**: Add clocks, system monitors, calendars, and personalize their look and layout
-- **File Explorer**: Integrated Yazi for seamless file management within the terminal
-- **Vim-Like Navigation**: Modal editing and keyboard-centric controls, reducing mouse dependency
-- **Tiling and Transparency**: Organizes windows in a grid and supports see-through effects
-- **Custom Taskbar**: Manages apps and notifications, adapting to multiple monitors
-- **Lua Scripting**: Customize behavior and key bindings using Lua scripts
-- **Fast Search**: Advanced indexing for quick access to files and applications
+The first public target is **v0.1 — Persistent Project Workspaces**: create a
+named project workspace, arrange its terminal tabs and panes, close Terminus,
+and return later to the same layout and working directories.
 
-## Technical Implementation
+Read the [product vision](VISION.md), [v0.1 product brief](docs/product/terminus-v0.1-product-brief.md),
+and [current project status](STATUS.md) for the product contract and progress.
 
-- **Core**: Written in C++ for high performance with low resource usage
-- **GUI**: Built with wxWidgets (Cross-Platform C++ GUI Library)
-- **Terminal**: Uses TerminalWx (WxWidgets Terminal Widget)
-- **Scripting**: Embedded Lua interpreter for customization and extensions
-- **Indexing**: Custom file indexing service for fast search capabilities
+## Current Stage: E0 Terminal Foundation
 
-## Requirements
+The local E0 implementation currently includes:
 
-- Windows 10/11 (64-bit)
-- 2GB RAM minimum (4GB recommended)
-- 100MB disk space
-- Modern CPU (Intel Core i3 or equivalent)
+- PTY-backed shell sessions through `portable-pty`.
+- xterm.js rendering with fit, search, web-links, Unicode, clipboard, and WebGL
+  fallback support.
+- Closable, keyboard-cyclable tabs and binary split-tree infrastructure.
+- Pane lifecycle states, spatial focus, maximize, and cwd inheritance through
+  OSC 7.
+- TOML config defaults and filesystem hot reload for appearance, shell, cwd,
+  and keybindings.
+- JSON theme loading and live theme/font mapping into xterm and CSS.
+- A shortcut-aware action registry and command palette, plus in-app Settings
+  for appearance and terminal defaults.
+- Recoverable frontend error notices, inline shell failures, and a retryable
+  fatal-startup state.
+- A Windows/macOS/Ubuntu GitHub Actions verification contract plus executable
+  PTY compatibility smoke tests.
 
-## Building from Source
+E0 remains incomplete until the remote Windows/macOS/Linux matrix passes and
+the documented native-app terminal compatibility suite meets the
+[technical design](docs/superpowers/specs/2026-06-22-terminus-e0-terminal-foundation-design.md).
 
-### Prerequisites
+## First Public Release: v0.1
 
-- Visual Studio 2019 or newer with C++ support
-- CMake 3.15 or newer
-- wxWidgets 3.2 or newer
-- Lua 5.4
+The v0.1 Public Preview adds the product value that E0 alone does not provide:
 
-### Build Steps
+- named workspaces with optional project roots;
+- local persistence of tabs, split layout, focus, shell profile, and cwd;
+- restore on launch using replacement PTY sessions in saved directories;
+- clear workspace lifecycle, persistence state, and reset controls;
+- no required account, network connection, or hosted service.
 
-1. Clone the repository:
+True detach/attach, built-in AI providers, command blocks, browser/content
+panes, cloud sync, Lua, and plugins are later work.
 
-   ```batch
-   git clone <https://github.com/NAME0x0/Terminus.git>
-   cd Terminus
-   ```
+## Project Layout
 
-2. Create a build directory:
+- `src-tauri/` — Tauri/Rust backend, IPC commands, PTY sessions, config loading.
+- `frontend/` — Vite/TypeScript frontend, xterm panes, layout, and keybindings.
+- `res/themes/default.json` — Terminus theme source format.
+- `VISION.md` — product positioning, principles, milestones, and roadmap.
+- `STATUS.md` — living implementation status and decision log.
+- `docs/product/` — product release contracts.
+- `docs/superpowers/specs/` — approved technical designs.
+- `docs/research/` — source and product research notes.
+- `docs/testing/` — executable and manual compatibility gates.
+- `.github/workflows/` — cross-platform verification contracts.
 
-   ```batch
-   mkdir build
-   cd build
-   ```
+## Development
 
-3. Generate build files:
+Prerequisites:
 
-   ```batch
-   cmake ..
-   ```
+- Rust toolchain with Cargo.
+- Node.js and npm.
+- Platform requirements for Tauri v2.
 
-4. Build the project:
+Install JavaScript dependencies:
 
-   ```batch
-   cmake --build . --config Release
-   ```
+```bash
+npm install
+```
 
-5. Run the application:
+Run the app in development:
 
-   ```batch
-   ./bin/Terminus
-   ```
+```bash
+npm run dev
+```
 
-## Project Structure
+Build the release executable without installer packaging:
 
-- `src/` - Source files
-- `include/` - Header files
-- `lib/` - Third-party libraries
-- `res/` - Resources (icons, themes, etc.)
-- `docs/` - Documentation
-- `tests/` - Test files
+```bash
+npm run build
+```
 
-## License
+Build platform bundles/installers:
 
-See the [LICENSE](LICENSE) file for details.
+```bash
+npm run bundle
+```
+
+Run the checks currently available:
+
+```bash
+npm run typecheck
+npm test
+npm run test:terminal-smoke
+cargo fmt --manifest-path src-tauri/Cargo.toml -- --check
+cargo clippy --manifest-path src-tauri/Cargo.toml -- -D warnings
+```
+
+The 21-test frontend suite covers pane attachment, layout lifecycle, tab
+actions, spatial focus, live config application, theme mapping, and keybinding
+replacement plus recoverable frontend failures. The eight-test Rust suite
+covers config defaults and filesystem
+reload, malformed-config fallback, real PTY output and exit codes, dead-session
+guards, manager create/close behavior, interactive input/resize, ANSI VT data,
+and sustained output. The cross-platform workflow is present but has not run on
+GitHub yet; see the [terminal smoke suite](docs/testing/terminal-compatibility-smoke.md)
+for the remaining manual gate.
+
+## Config
+
+On first launch, the backend creates `config.toml` in a `Terminus` folder under
+the platform config directory. Open Settings from the titlebar or with
+`Ctrl+,` to change appearance and terminal defaults without leaving the
+workspace; the same area also shows every active shortcut. The config covers
+appearance, shell command, shell args, cwd, and keybindings. Changes are watched
+at runtime: appearance and keybindings update existing panes immediately, while
+shell changes apply to terminals created afterward. Malformed TOML falls back
+to built-in defaults without blocking startup.
+
+## Old Scaffold
+
+The C++/wxWidgets files under `src/`, `include/`, `tests/`, `CMakeLists.txt`,
+and `build.bat` are retained temporarily for transition context. They must not
+receive new product work and will be removed after the E0 implementation is
+protected and its replacement boundary is clear in history.
