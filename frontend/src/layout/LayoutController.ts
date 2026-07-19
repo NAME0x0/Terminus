@@ -1,13 +1,19 @@
 import type { ITheme } from '@xterm/xterm';
 import type { AppConfig } from '../config/types';
 import type { PaneCommand, TerminalPane } from '../terminal/TerminalPane';
+import type {
+  SplitDirection,
+  WorkspaceLayout,
+  WorkspaceLayoutNode,
+  WorkspaceTab
+} from '../workspaces/types';
 
-type SplitDirection = 'horizontal' | 'vertical';
 type FocusDirection = 'up' | 'down' | 'left' | 'right';
 
 type LayoutNode =
   | {
       type: 'leaf';
+      id: string;
       pane: TerminalPane;
     }
   | {
@@ -18,10 +24,14 @@ type LayoutNode =
       second: LayoutNode;
     };
 
+type LeafNode = Extract<LayoutNode, { type: 'leaf' }>;
+
 interface TabState {
   id: number;
+  persistenceId: string;
   title: string;
   root: LayoutNode;
+  focusedPane: TerminalPane;
 }
 
 export class LayoutController {
@@ -46,18 +56,17 @@ export class LayoutController {
     const pane = this.createPane(null);
     const tab: TabState = {
       id: this.nextTabId++,
+      persistenceId: createPersistentId('tab'),
       title: 'Terminal',
-      root: { type: 'leaf', pane }
+      root: { type: 'leaf', id: createPersistentId('pane'), pane },
+      focusedPane: pane
     };
     this.tabs.push(tab);
     this.activeTabId = tab.id;
     this.focusedPane = pane;
     this.render();
 
-    const host = this.workspace.querySelector<HTMLElement>('[data-new-pane-host]');
-    if (host) {
-      await pane.mount(host);
-    }
+    await this.mountVisiblePanes();
     this.renderFocus();
     this.renderStatus();
   }
@@ -73,17 +82,14 @@ export class LayoutController {
       type: 'split',
       direction,
       ratio: 0.5,
-      first: { type: 'leaf', pane: this.focusedPane },
-      second: { type: 'leaf', pane: newPane }
+      first: leafForPane(tab.root, this.focusedPane),
+      second: { type: 'leaf', id: createPersistentId('pane'), pane: newPane }
     });
     this.focusedPane = newPane;
+    tab.focusedPane = newPane;
     this.render();
 
-    const host = this.workspace.querySelector<HTMLElement>('[data-new-pane-host]');
-    if (host) {
-      host.removeAttribute('data-new-pane-host');
-      await newPane.mount(host);
-    }
+    await this.mountVisiblePanes();
     this.renderFocus();
     this.renderStatus();
   }
@@ -94,6 +100,52 @@ export class LayoutController {
         pane.applyConfig(config, theme);
       }
     }
+  }
+
+  snapshot(): WorkspaceLayout {
+    const activeTab = this.activeTab();
+    return {
+      activeTabId: activeTab?.persistenceId ?? '',
+      tabs: this.tabs.map((tab) => ({
+        id: tab.persistenceId,
+        title: tab.title,
+        root: snapshotNode(tab.root),
+        focusedPaneId: persistenceIdForPane(tab.root, tab.focusedPane) ?? firstLeaf(tab.root).id
+      }))
+    };
+  }
+
+  async restore(snapshot: WorkspaceLayout): Promise<void> {
+    assertValidSnapshot(snapshot);
+    for (const tab of this.tabs) {
+      for (const pane of collectPanes(tab.root)) {
+        pane.dispose();
+      }
+    }
+
+    this.tabs.splice(0);
+    this.nextTabId = 1;
+    this.maximizedPane = null;
+    for (const savedTab of snapshot.tabs) {
+      const root = this.restoreNode(savedTab.root);
+      const focusedPane = paneForPersistenceId(root, savedTab.focusedPaneId) ?? firstPane(root);
+      this.tabs.push({
+        id: this.nextTabId++,
+        persistenceId: savedTab.id,
+        title: savedTab.title,
+        root,
+        focusedPane
+      });
+    }
+
+    const activeTab =
+      this.tabs.find((tab) => tab.persistenceId === snapshot.activeTabId) ?? this.tabs[0];
+    this.activeTabId = activeTab.id;
+    this.focusedPane = activeTab.focusedPane;
+    this.render();
+    await this.mountVisiblePanes();
+    this.renderFocus();
+    this.renderStatus();
   }
 
   closeActiveTab(): void {
@@ -123,19 +175,20 @@ export class LayoutController {
     if (this.activeTabId === id) {
       const nextTab = this.tabs[Math.min(index, this.tabs.length - 1)];
       this.activeTabId = nextTab.id;
-      this.focusedPane = firstPane(nextTab.root);
+      this.focusedPane = nextTab.focusedPane;
     }
     this.render();
+    void this.mountVisiblePanes();
     this.renderFocus();
     this.renderStatus();
   }
 
-  nextTab(): void {
-    this.focusTabByOffset(1);
+  nextTab(): Promise<void> {
+    return this.focusTabByOffset(1);
   }
 
-  previousTab(): void {
-    this.focusTabByOffset(-1);
+  previousTab(): Promise<void> {
+    return this.focusTabByOffset(-1);
   }
 
   closeFocusedPane(): void {
@@ -161,6 +214,7 @@ export class LayoutController {
     }
     tab.root = collapsed;
     this.focusedPane = firstPane(tab.root);
+    tab.focusedPane = this.focusedPane;
     tab.title = this.focusedPane.title();
 
     this.render();
@@ -168,15 +222,16 @@ export class LayoutController {
     this.renderStatus();
   }
 
-  activateTab(id: number): void {
+  async activateTab(id: number): Promise<void> {
     const tab = this.tabs.find((item) => item.id === id);
     if (!tab) {
       return;
     }
     this.activeTabId = id;
-    this.focusedPane = firstPane(tab.root);
+    this.focusedPane = tab.focusedPane;
     this.maximizedPane = null;
     this.render();
+    await this.mountVisiblePanes();
     this.renderFocus();
     this.renderStatus();
   }
@@ -184,6 +239,10 @@ export class LayoutController {
   setFocusedPane(pane: TerminalPane): void {
     this.focusedPane?.blur();
     this.focusedPane = pane;
+    const tab = this.tabForPane(pane);
+    if (tab) {
+      tab.focusedPane = pane;
+    }
     pane.focus();
     this.renderStatus();
   }
@@ -254,6 +313,44 @@ export class LayoutController {
     }
   }
 
+  private restoreNode(node: WorkspaceLayoutNode): LayoutNode {
+    if (node.type === 'leaf') {
+      return {
+        type: 'leaf',
+        id: node.pane.id,
+        pane: this.createPane(node.pane.cwd)
+      };
+    }
+    return {
+      type: 'split',
+      direction: node.direction,
+      ratio: node.ratio,
+      first: this.restoreNode(node.first),
+      second: this.restoreNode(node.second)
+    };
+  }
+
+  private async mountVisiblePanes(): Promise<void> {
+    const tab = this.activeTab();
+    if (!tab) {
+      return;
+    }
+    const hosts = new Map(
+      [...this.workspace.querySelectorAll<HTMLElement>('[data-pane-id]')].map((host) => [
+        host.dataset.paneId,
+        host
+      ])
+    );
+    await Promise.all(
+      collectLeaves(tab.root).map(async (leaf) => {
+        const host = hosts.get(leaf.id);
+        if (host && !leaf.pane.hasMounted()) {
+          await leaf.pane.mount(host);
+        }
+      })
+    );
+  }
+
   private activeTab(): TabState | undefined {
     return this.tabs.find((tab) => tab.id === this.activeTabId);
   }
@@ -269,9 +366,9 @@ export class LayoutController {
 
     const renderedRoot =
       this.maximizedPane && containsPane(tab.root, this.maximizedPane)
-        ? { type: 'leaf' as const, pane: this.maximizedPane }
+        ? leafForPane(tab.root, this.maximizedPane)
         : tab.root;
-    const renderedWorkspace = renderNode(renderedRoot, this.focusedPane);
+    const renderedWorkspace = renderNode(renderedRoot);
     this.workspace.replaceChildren(renderedWorkspace);
   }
 
@@ -284,7 +381,7 @@ export class LayoutController {
       button.type = 'button';
       button.className = tab.id === this.activeTabId ? 'tab is-active' : 'tab';
       button.textContent = tab.title;
-      button.addEventListener('click', () => this.activateTab(tab.id));
+      button.addEventListener('click', () => void this.activateTab(tab.id));
       const close = document.createElement('button');
       close.type = 'button';
       close.className = 'tab-close';
@@ -333,13 +430,13 @@ export class LayoutController {
     this.setFocusedPane(panes[nextIndex]);
   }
 
-  private focusTabByOffset(offset: number): void {
+  private async focusTabByOffset(offset: number): Promise<void> {
     const index = this.tabs.findIndex((tab) => tab.id === this.activeTabId);
     if (index === -1 || this.tabs.length < 2) {
       return;
     }
     const nextIndex = (index + offset + this.tabs.length) % this.tabs.length;
-    this.activateTab(this.tabs[nextIndex].id);
+    await this.activateTab(this.tabs[nextIndex].id);
   }
 
   private tabForPane(pane: TerminalPane): TabState | undefined {
@@ -347,15 +444,14 @@ export class LayoutController {
   }
 }
 
-function renderNode(node: LayoutNode, focusedPane: TerminalPane | null): HTMLElement {
+function renderNode(node: LayoutNode): HTMLElement {
   if (node.type === 'leaf') {
     const host = document.createElement('section');
     host.className = 'pane-host';
     host.dataset.paneHost = 'true';
+    host.dataset.paneId = node.id;
     if (node.pane.hasMounted()) {
       node.pane.remount(host);
-    } else if (node.pane === focusedPane) {
-      host.dataset.newPaneHost = 'true';
     }
     return host;
   }
@@ -363,7 +459,7 @@ function renderNode(node: LayoutNode, focusedPane: TerminalPane | null): HTMLEle
   const split = document.createElement('div');
   split.className = `split split-${node.direction}`;
   split.style.setProperty('--split-ratio', String(node.ratio));
-  split.append(renderNode(node.first, focusedPane), renderNode(node.second, focusedPane));
+  split.append(renderNode(node.first), renderNode(node.second));
   return split;
 }
 
@@ -401,8 +497,25 @@ function removeLeaf(node: LayoutNode, pane: TerminalPane): LayoutNode | null {
   };
 }
 
+function leafForPane(node: LayoutNode, pane: TerminalPane): LeafNode {
+  if (node.type === 'leaf') {
+    if (node.pane === pane) {
+      return node;
+    }
+    throw new Error('focused pane is missing from the active layout');
+  }
+  if (containsPane(node.first, pane)) {
+    return leafForPane(node.first, pane);
+  }
+  return leafForPane(node.second, pane);
+}
+
+function firstLeaf(node: LayoutNode): LeafNode {
+  return node.type === 'leaf' ? node : firstLeaf(node.first);
+}
+
 function firstPane(node: LayoutNode): TerminalPane {
-  return node.type === 'leaf' ? node.pane : firstPane(node.first);
+  return firstLeaf(node).pane;
 }
 
 function containsPane(node: LayoutNode, pane: TerminalPane): boolean {
@@ -411,6 +524,93 @@ function containsPane(node: LayoutNode, pane: TerminalPane): boolean {
 
 function collectPanes(node: LayoutNode): TerminalPane[] {
   return node.type === 'leaf' ? [node.pane] : [...collectPanes(node.first), ...collectPanes(node.second)];
+}
+
+function collectLeaves(node: LayoutNode): LeafNode[] {
+  return node.type === 'leaf' ? [node] : [...collectLeaves(node.first), ...collectLeaves(node.second)];
+}
+
+function snapshotNode(node: LayoutNode): WorkspaceLayoutNode {
+  if (node.type === 'leaf') {
+    return {
+      type: 'leaf',
+      pane: {
+        id: node.id,
+        cwd: node.pane.cwd(),
+        shellProfile: null
+      }
+    };
+  }
+  return {
+    type: 'split',
+    direction: node.direction,
+    ratio: node.ratio,
+    first: snapshotNode(node.first),
+    second: snapshotNode(node.second)
+  };
+}
+
+function persistenceIdForPane(node: LayoutNode, pane: TerminalPane): string | null {
+  const leaf = collectLeaves(node).find((candidate) => candidate.pane === pane);
+  return leaf?.id ?? null;
+}
+
+function paneForPersistenceId(node: LayoutNode, id: string): TerminalPane | null {
+  const leaf = collectLeaves(node).find((candidate) => candidate.id === id);
+  return leaf?.pane ?? null;
+}
+
+function assertValidSnapshot(snapshot: WorkspaceLayout): void {
+  if (snapshot.tabs.length === 0) {
+    throw new Error('workspace layout must contain at least one tab');
+  }
+  const tabIds = new Set<string>();
+  for (const tab of snapshot.tabs) {
+    if (!tab.id || tabIds.has(tab.id)) {
+      throw new Error(`workspace layout contains an invalid tab id: ${tab.id}`);
+    }
+    tabIds.add(tab.id);
+    assertValidTab(tab);
+  }
+  if (!tabIds.has(snapshot.activeTabId)) {
+    throw new Error(`active tab ${snapshot.activeTabId} does not exist`);
+  }
+}
+
+function assertValidTab(tab: WorkspaceTab): void {
+  const paneIds = new Set<string>();
+  visitSnapshotNode(tab.root, (id) => {
+    if (!id || paneIds.has(id)) {
+      throw new Error(`tab ${tab.id} contains an invalid pane id: ${id}`);
+    }
+    paneIds.add(id);
+  });
+  if (!paneIds.has(tab.focusedPaneId)) {
+    throw new Error(`focused pane ${tab.focusedPaneId} does not exist in tab ${tab.id}`);
+  }
+}
+
+function visitSnapshotNode(node: WorkspaceLayoutNode, visitPane: (id: string) => void): void {
+  if (node.type === 'leaf') {
+    visitPane(node.pane.id);
+    return;
+  }
+  if (!Number.isFinite(node.ratio) || node.ratio <= 0 || node.ratio >= 1) {
+    throw new Error('split ratio must be between zero and one');
+  }
+  visitSnapshotNode(node.first, visitPane);
+  visitSnapshotNode(node.second, visitPane);
+}
+
+let fallbackPersistentId = 0;
+
+function createPersistentId(prefix: 'tab' | 'pane'): string {
+  const uuid = globalThis.crypto?.randomUUID?.();
+  if (uuid) {
+    return `${prefix}-${uuid}`;
+  }
+  fallbackPersistentId += 1;
+  return `${prefix}-${Date.now().toString(36)}-${fallbackPersistentId}`;
 }
 
 function directionalRank(origin: DOMRect, candidate: DOMRect, direction: FocusDirection): number[] | null {
