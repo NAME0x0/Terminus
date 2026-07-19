@@ -13,7 +13,7 @@ export function applyTheme(theme: TerminusTheme = defaultTheme): ITheme {
   const root = document.documentElement;
   root.style.setProperty('--color-bg', theme.colors.background);
   root.style.setProperty('--color-fg', theme.colors.foreground);
-  root.style.setProperty('--color-accent', theme.colors.accent);
+  root.style.setProperty('--terminus-accent', theme.colors.accent);
   root.style.setProperty('--color-selection', theme.colors.selection);
   root.style.setProperty('--color-terminal-bg', theme.colors.terminal.background);
   root.style.setProperty('--color-panel', theme.colors.ui.toolbar);

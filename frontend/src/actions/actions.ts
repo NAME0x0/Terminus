@@ -5,6 +5,7 @@ export interface ActionDefinition {
   id: string;
   title: string;
   run: () => void | Promise<void>;
+  isEnabled?: () => boolean;
 }
 
 export class ActionRegistry {
@@ -29,6 +30,9 @@ export class ActionRegistry {
     if (!action) {
       return;
     }
+    if (action.isEnabled && !action.isEnabled()) {
+      return;
+    }
     try {
       await action.run();
     } catch (error) {
@@ -41,7 +45,8 @@ export function createActionRegistry(
   layout: LayoutController,
   openPalette: () => void,
   openSettings: () => void,
-  reportError: ErrorReporter = () => {}
+  reportError: ErrorReporter = () => {},
+  hasActiveWorkspace: () => boolean = () => true
 ): ActionRegistry {
   const registry = new ActionRegistry(reportError);
   const register = (id: string, title: string, run: () => void | Promise<void>) =>
@@ -66,6 +71,31 @@ export function createActionRegistry(
   register('find', 'Find in pane', () => layout.focused()?.find());
   register('commandPalette', 'Open command palette', openPalette);
   register('settings', 'Open settings', openSettings);
+
+  for (const id of [
+    'newTab',
+    'closeTab',
+    'nextTab',
+    'previousTab',
+    'closePane',
+    'splitHorizontal',
+    'splitVertical',
+    'toggleMaximizePane',
+    'focusNextPane',
+    'focusPreviousPane',
+    'focusPaneUp',
+    'focusPaneDown',
+    'focusPaneLeft',
+    'focusPaneRight',
+    'copy',
+    'paste',
+    'find'
+  ]) {
+    const action = registry.get(id);
+    if (action) {
+      action.isEnabled = hasActiveWorkspace;
+    }
+  }
 
   return registry;
 }

@@ -12,7 +12,7 @@ describe('theme application', () => {
     const xtermTheme = applyTheme(resolveTheme('default'));
 
     expect(document.documentElement.style.getPropertyValue('--color-bg')).toBe('#1E1E1E');
-    expect(document.documentElement.style.getPropertyValue('--color-accent')).toBe('#007ACC');
+    expect(document.documentElement.style.getPropertyValue('--terminus-accent')).toBe('#007ACC');
     expect(document.documentElement.style.getPropertyValue('--color-terminal-bg')).toBe('#0C0C0C');
     expect(document.documentElement.style.getPropertyValue('--color-statusbar')).toBe('#007ACC');
     expect(document.documentElement.style.getPropertyValue('--font-ui')).toBe('Segoe UI');

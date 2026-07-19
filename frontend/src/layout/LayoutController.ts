@@ -45,15 +45,16 @@ export class LayoutController {
     private readonly tabBar: HTMLElement,
     private readonly workspace: HTMLElement,
     private readonly statusText: HTMLElement,
-    private readonly createPane: (cwd: string | null) => TerminalPane
+    private readonly createPane: (cwd: string | null) => TerminalPane,
+    private readonly onDidChange: () => void = () => {}
   ) {}
 
-  async initialize(): Promise<void> {
-    await this.newTab();
+  async initialize(cwd: string | null = null): Promise<void> {
+    await this.newTab(cwd);
   }
 
-  async newTab(): Promise<void> {
-    const pane = this.createPane(null);
+  async newTab(cwd: string | null = null): Promise<void> {
+    const pane = this.createPane(cwd);
     const tab: TabState = {
       id: this.nextTabId++,
       persistenceId: createPersistentId('tab'),
@@ -68,6 +69,25 @@ export class LayoutController {
 
     await this.mountVisiblePanes();
     this.renderFocus();
+    this.renderStatus();
+    this.onDidChange();
+  }
+
+  async reset(cwd: string | null = null): Promise<void> {
+    this.clear();
+    await this.newTab(cwd);
+  }
+
+  clear(): void {
+    this.disposeTabs();
+    this.render();
+    this.renderStatus();
+    this.onDidChange();
+  }
+
+  dispose(): void {
+    this.disposeTabs();
+    this.render();
     this.renderStatus();
   }
 
@@ -92,6 +112,7 @@ export class LayoutController {
     await this.mountVisiblePanes();
     this.renderFocus();
     this.renderStatus();
+    this.onDidChange();
   }
 
   applyConfig(config: AppConfig, theme: ITheme): void {
@@ -181,6 +202,7 @@ export class LayoutController {
     void this.mountVisiblePanes();
     this.renderFocus();
     this.renderStatus();
+    this.onDidChange();
   }
 
   nextTab(): Promise<void> {
@@ -220,6 +242,7 @@ export class LayoutController {
     this.render();
     this.renderFocus();
     this.renderStatus();
+    this.onDidChange();
   }
 
   async activateTab(id: number): Promise<void> {
@@ -234,6 +257,7 @@ export class LayoutController {
     await this.mountVisiblePanes();
     this.renderFocus();
     this.renderStatus();
+    this.onDidChange();
   }
 
   setFocusedPane(pane: TerminalPane): void {
@@ -245,6 +269,7 @@ export class LayoutController {
     }
     pane.focus();
     this.renderStatus();
+    this.onDidChange();
   }
 
   focused(): TerminalPane | null {
@@ -276,6 +301,7 @@ export class LayoutController {
     }
     this.renderTabs();
     this.renderStatus();
+    this.onDidChange();
   }
 
   toggleMaximizeFocusedPane(): void {
@@ -328,6 +354,19 @@ export class LayoutController {
       first: this.restoreNode(node.first),
       second: this.restoreNode(node.second)
     };
+  }
+
+  private disposeTabs(): void {
+    for (const tab of this.tabs) {
+      for (const pane of collectPanes(tab.root)) {
+        pane.dispose();
+      }
+    }
+    this.tabs.splice(0);
+    this.activeTabId = 0;
+    this.focusedPane = null;
+    this.maximizedPane = null;
+    this.nextTabId = 1;
   }
 
   private async mountVisiblePanes(): Promise<void> {

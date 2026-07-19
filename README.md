@@ -17,7 +17,7 @@ and [current project status](STATUS.md) for the product contract and progress.
 
 ## Current Stage: E0 Terminal Foundation
 
-The local E0 implementation currently includes:
+The local E0 implementation and the first E1 product slice currently include:
 
 - PTY-backed shell sessions through `portable-pty`.
 - xterm.js rendering with fit, search, web-links, Unicode, clipboard, and WebGL
@@ -30,6 +30,13 @@ The local E0 implementation currently includes:
 - JSON theme loading and live theme/font mapping into xterm and CSS.
 - A shortcut-aware action registry and command palette, plus in-app Settings
   for appearance and terminal defaults.
+- A React, Tailwind, and shadcn/ui application shell with an adaptive workspace
+  sidebar: persistent on wider windows, user-collapsible, and a drawer on
+  constrained windows.
+- Named local workspaces with create, open, rename, remove, reset, save-state
+  feedback, and layout/cwd restoration.
+- A development-only Brainless compatibility preview for future agent event
+  rendering; ordinary terminal streams remain in xterm.js.
 - Recoverable frontend error notices, inline shell failures, and a retryable
   fatal-startup state.
 - A Windows/macOS/Ubuntu GitHub Actions verification contract plus executable
@@ -55,7 +62,8 @@ panes, cloud sync, Lua, and plugins are later work.
 ## Project Layout
 
 - `src-tauri/` — Tauri/Rust backend, IPC commands, PTY sessions, config loading.
-- `frontend/` — Vite/TypeScript frontend, xterm panes, layout, and keybindings.
+- `frontend/` — React/Vite/TypeScript frontend, xterm panes, layout, workspaces,
+  and keybindings.
 - `res/themes/default.json` — Terminus theme source format.
 - `VISION.md` — product positioning, principles, milestones, and roadmap.
 - `STATUS.md` — living implementation status and decision log.
@@ -107,15 +115,16 @@ cargo fmt --manifest-path src-tauri/Cargo.toml -- --check
 cargo clippy --manifest-path src-tauri/Cargo.toml -- -D warnings
 ```
 
-The 21-test frontend suite covers pane attachment, layout lifecycle, tab
-actions, spatial focus, live config application, theme mapping, and keybinding
-replacement plus recoverable frontend failures. The eight-test Rust suite
-covers config defaults and filesystem
-reload, malformed-config fallback, real PTY output and exit codes, dead-session
-guards, manager create/close behavior, interactive input/resize, ANSI VT data,
-and sustained output. The cross-platform workflow is present but has not run on
-GitHub yet; see the [terminal smoke suite](docs/testing/terminal-compatibility-smoke.md)
-for the remaining manual gate.
+The 39-test frontend suite covers pane attachment, layout lifecycle, tab
+actions, spatial focus, live config application, theme mapping, keybinding
+replacement, recoverable failures, workspace persistence, adaptive sidebar
+behavior, and the Brainless compatibility boundary. The 15-test Rust suite
+covers config and workspace-store contracts, filesystem reload and fallback,
+real PTY output and exit codes, dead-session guards, manager create/close
+behavior, interactive input/resize, ANSI VT data, and sustained output. The
+cross-platform workflow is present, but the native-app compatibility suite is
+still a separate manual gate; see the
+[terminal smoke suite](docs/testing/terminal-compatibility-smoke.md).
 
 ## Config
 
