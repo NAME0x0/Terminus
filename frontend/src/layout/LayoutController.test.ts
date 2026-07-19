@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import type { ITheme } from '@xterm/xterm';
 import type { AppConfig } from '../config/types';
 import type { PaneMetadata, TerminalPane } from '../terminal/TerminalPane';
+import type { WorkspaceLayout } from '../workspaces/types';
 import { LayoutController } from './LayoutController';
 
 class FakeTerminalPane {
@@ -239,6 +240,59 @@ describe('LayoutController pane rendering', () => {
     expect(panes[0].focused).toBe(true);
     expect(panes[1].focused).toBe(false);
   });
+
+  it('snapshots tabs, split structure, cwd, and focused pane identity', async () => {
+    await controller.initialize();
+    await controller.split('vertical');
+    controller.focusPreviousPane();
+    await controller.newTab();
+    await controller.activateTab(1);
+
+    const snapshot = controller.snapshot();
+    const firstTab = snapshot.tabs[0];
+
+    expect(snapshot.tabs).toHaveLength(2);
+    expect(snapshot.activeTabId).toBe(firstTab.id);
+    expect(firstTab.root.type).toBe('split');
+    if (firstTab.root.type !== 'split') {
+      throw new Error('expected a split layout');
+    }
+    expect(firstTab.root.direction).toBe('vertical');
+    expect(firstTab.root.first.type).toBe('leaf');
+    expect(firstTab.root.second.type).toBe('leaf');
+    if (firstTab.root.first.type === 'leaf' && firstTab.root.second.type === 'leaf') {
+      expect(firstTab.root.first.pane.cwd).toBe('C:\\project');
+      expect(firstTab.root.second.pane.cwd).toBe('C:\\project');
+      expect(firstTab.focusedPaneId).toBe(firstTab.root.first.pane.id);
+    }
+  });
+
+  it('restores saved tabs lazily with fresh panes and per-tab focus', async () => {
+    await controller.initialize();
+    const originalPane = panes[0];
+    const snapshot = savedLayout();
+
+    await controller.restore(snapshot);
+
+    expect(originalPane.disposed).toBe(true);
+    expect(controller.snapshot()).toEqual(snapshot);
+    expect(visiblePaneNames(workspace)).toEqual(['pane-4']);
+
+    await controller.activateTab(1);
+    expect(visiblePaneNames(workspace)).toEqual(['pane-2', 'pane-3']);
+    expect(panes[2].focused).toBe(true);
+  });
+
+  it('rejects an invalid snapshot before disposing the current session', async () => {
+    await controller.initialize();
+    const invalid = savedLayout();
+    invalid.activeTabId = 'missing-tab';
+
+    await expect(controller.restore(invalid)).rejects.toThrow('active tab missing-tab does not exist');
+
+    expect(panes[0].disposed).toBe(false);
+    expect(visiblePaneNames(workspace)).toEqual(['pane-1']);
+  });
 });
 
 function visiblePaneNames(workspace: HTMLElement): string[] {
@@ -275,5 +329,40 @@ function testConfig(): AppConfig {
       cwd: null
     },
     keybindings: {}
+  };
+}
+
+function savedLayout(): WorkspaceLayout {
+  return {
+    activeTabId: 'tab-b',
+    tabs: [
+      {
+        id: 'tab-a',
+        title: 'Project',
+        focusedPaneId: 'pane-b',
+        root: {
+          type: 'split',
+          direction: 'vertical',
+          ratio: 0.5,
+          first: {
+            type: 'leaf',
+            pane: { id: 'pane-a', cwd: 'C:\\project', shellProfile: null }
+          },
+          second: {
+            type: 'leaf',
+            pane: { id: 'pane-b', cwd: 'C:\\project\\frontend', shellProfile: null }
+          }
+        }
+      },
+      {
+        id: 'tab-b',
+        title: 'Server',
+        focusedPaneId: 'pane-c',
+        root: {
+          type: 'leaf',
+          pane: { id: 'pane-c', cwd: 'C:\\project', shellProfile: null }
+        }
+      }
+    ]
   };
 }

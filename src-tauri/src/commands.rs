@@ -5,6 +5,9 @@ use tauri::{AppHandle, State};
 
 use crate::config::{load_config, save_config as persist_config, Config};
 use crate::pty::PtySize;
+use crate::workspace::{
+    load_workspace_store, save_workspace_store as persist_workspace_store, WorkspaceStore,
+};
 use crate::AppState;
 
 #[derive(Debug, Deserialize)]
@@ -128,6 +131,17 @@ pub fn get_config() -> Result<Config, String> {
 pub fn save_config(config: Config) -> Result<Config, String> {
     persist_config(&config).map_err(|err| err.to_string())?;
     Ok(config)
+}
+
+#[tauri::command]
+pub fn get_workspace_store() -> Result<WorkspaceStore, String> {
+    load_workspace_store().map_err(|err| err.to_string())
+}
+
+#[tauri::command]
+pub fn save_workspace_store(store: WorkspaceStore) -> Result<WorkspaceStore, String> {
+    persist_workspace_store(&store).map_err(|err| err.to_string())?;
+    Ok(store)
 }
 
 fn default_shell() -> String {

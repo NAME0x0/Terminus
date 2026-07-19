@@ -2,6 +2,7 @@ mod commands;
 mod config;
 mod pty;
 mod session;
+mod workspace;
 
 use std::sync::Mutex;
 
@@ -33,7 +34,9 @@ pub fn run() {
             commands::resize,
             commands::close_terminal,
             commands::get_config,
-            commands::save_config
+            commands::save_config,
+            commands::get_workspace_store,
+            commands::save_workspace_store
         ])
         .run(tauri::generate_context!())
         .expect("failed to run Terminus");
