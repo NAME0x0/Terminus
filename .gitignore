@@ -1,7 +1,7 @@
 # Build directories  
 build/  
 bin/  
-lib/  
+/lib/
 out/  
 frontend/dist/
 src-tauri/gen/
