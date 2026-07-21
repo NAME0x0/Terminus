@@ -45,11 +45,11 @@ version check is not an adequate substitute.
 | Config reload | Change font size and a keybinding in `config.toml`, then save malformed TOML once. | Valid changes apply live; malformed input does not crash or block the app. |
 | Failure recovery | Configure a nonexistent shell, open a tab, then restore the shell config. | The failed pane stays closable, explains the failure, and a new tab can recover. |
 
-## Current evidence — 2026-07-18
+## Current evidence — 2026-07-21
 
 | Environment | Automated PTY smoke | Manual native-app pass |
 |---|---:|---:|
-| Windows local | Pass — 2/2 on 2026-07-17 | Not yet run |
+| Windows local | Pass — 2/2 on 2026-07-21 | Not yet run |
 | Windows GitHub runner | Pass — 2/2 in [run 29634928793](https://github.com/NAME0x0/Terminus/actions/runs/29634928793) | Not applicable |
 | macOS GitHub runner | Pass — 2/2 in [run 29634928793](https://github.com/NAME0x0/Terminus/actions/runs/29634928793) | Not applicable |
 | Ubuntu GitHub runner | Pass — 2/2 in [run 29634928793](https://github.com/NAME0x0/Terminus/actions/runs/29634928793) | Not applicable |
@@ -58,3 +58,5 @@ version check is not an adequate substitute.
 
 Do not mark E0 accepted while any required manual row or remote CI job remains
 unverified. The v0.1 persistence/restore smoke pass is a separate release gate.
+The packaged Windows v0.1 journey passed on 2026-07-21; see
+[`v0.1-workspace-persistence-acceptance.md`](v0.1-workspace-persistence-acceptance.md).

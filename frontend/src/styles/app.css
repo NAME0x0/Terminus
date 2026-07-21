@@ -1,7 +1,41 @@
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --radius-sm: calc(var(--radius) * 0.75);
+  --radius-md: calc(var(--radius) * 0.875);
+  --radius-lg: var(--radius);
+  --font-sans: "Segoe UI", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "Cascadia Code", "SFMono-Regular", Consolas, monospace;
+}
+
 :root {
   --color-bg: #1e1e1e;
   --color-fg: #d4d4d4;
-  --color-accent: #007acc;
+  --terminus-accent: #007acc;
   --color-selection: #264f78;
   --color-terminal-bg: #0c0c0c;
   --color-panel: #2d2d2d;
@@ -11,6 +45,31 @@
   --color-muted: color-mix(in srgb, var(--color-fg), transparent 42%);
   --color-surface-raised: color-mix(in srgb, var(--color-panel), #000 12%);
   --font-ui: "Segoe UI", sans-serif;
+  --background: var(--color-bg);
+  --foreground: var(--color-fg);
+  --card: #202328;
+  --card-foreground: #e3e5e8;
+  --popover: #202328;
+  --popover-foreground: #e3e5e8;
+  --primary: var(--terminus-accent);
+  --primary-foreground: #ffffff;
+  --secondary: #2a2e34;
+  --secondary-foreground: #e3e5e8;
+  --muted: #292d32;
+  --muted-foreground: #959ba4;
+  --accent: #30353c;
+  --accent-foreground: #f3f4f6;
+  --destructive: #ef6a73;
+  --border: #343941;
+  --input: #3a4049;
+  --ring: color-mix(in srgb, var(--terminus-accent), #fff 16%);
+  --sidebar: #181b1f;
+  --sidebar-foreground: #e3e5e8;
+  --sidebar-accent: #282d33;
+  --sidebar-accent-foreground: #f5f6f7;
+  --sidebar-border: #2e333a;
+  --sidebar-ring: var(--terminus-accent);
+  --radius: 0.5rem;
 }
 
 * {
@@ -86,7 +145,7 @@ textarea {
   font-family: Consolas, monospace;
   font-size: 11px;
   letter-spacing: -1px;
-  background: var(--color-accent);
+  background: var(--terminus-accent);
   border-radius: 6px;
 }
 
@@ -126,8 +185,8 @@ textarea {
 }
 
 .tab-item.is-active {
-  background: color-mix(in srgb, var(--color-panel), var(--color-accent) 18%);
-  box-shadow: inset 0 -2px 0 var(--color-accent);
+  background: color-mix(in srgb, var(--color-panel), var(--terminus-accent) 18%);
+  box-shadow: inset 0 -2px 0 var(--terminus-accent);
 }
 
 .tab-close {
@@ -146,7 +205,7 @@ textarea {
 
 .tab-close:hover,
 .tab-close:focus-visible {
-  background: color-mix(in srgb, var(--color-accent), transparent 68%);
+  background: color-mix(in srgb, var(--terminus-accent), transparent 68%);
   outline: 0;
 }
 
@@ -171,8 +230,8 @@ textarea {
 
 .topbar-action.is-primary {
   color: #fff;
-  background: color-mix(in srgb, var(--color-accent), transparent 12%);
-  border-color: color-mix(in srgb, var(--color-accent), #fff 12%);
+  background: color-mix(in srgb, var(--terminus-accent), transparent 12%);
+  border-color: color-mix(in srgb, var(--terminus-accent), #fff 12%);
 }
 
 .topbar-action-label {
@@ -192,8 +251,8 @@ textarea {
 
 .topbar-action:hover,
 .topbar-action:focus-visible {
-  border-color: color-mix(in srgb, var(--color-accent), #fff 20%);
-  background: color-mix(in srgb, var(--color-accent), transparent 74%);
+  border-color: color-mix(in srgb, var(--terminus-accent), #fff 20%);
+  background: color-mix(in srgb, var(--terminus-accent), transparent 74%);
   outline: 0;
 }
 
@@ -242,7 +301,7 @@ textarea {
 }
 
 .terminal-pane.is-focused {
-  outline-color: var(--color-accent);
+  outline-color: var(--terminus-accent);
 }
 
 .terminal-host {
@@ -360,8 +419,8 @@ textarea {
 
 .pane-action:hover,
 .pane-action:focus-visible {
-  border-color: color-mix(in srgb, var(--color-accent), #fff 20%);
-  background: color-mix(in srgb, var(--color-accent), transparent 72%);
+  border-color: color-mix(in srgb, var(--terminus-accent), #fff 20%);
+  background: color-mix(in srgb, var(--terminus-accent), transparent 72%);
   outline: 0;
 }
 
@@ -405,7 +464,7 @@ textarea {
 .command-palette-panel {
   width: min(560px, calc(100vw - 32px));
   background: color-mix(in srgb, var(--color-panel), #000 18%);
-  border: 1px solid color-mix(in srgb, var(--color-accent), #fff 18%);
+  border: 1px solid color-mix(in srgb, var(--terminus-accent), #fff 18%);
   box-shadow: 0 18px 48px rgb(0 0 0 / 42%);
 }
 
@@ -511,7 +570,7 @@ textarea {
 
 .settings-eyebrow {
   margin-bottom: 5px;
-  color: var(--color-accent);
+  color: var(--terminus-accent);
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.12em;
@@ -584,7 +643,7 @@ textarea {
 }
 
 .settings-section code {
-  color: color-mix(in srgb, var(--color-accent), #fff 26%);
+  color: color-mix(in srgb, var(--terminus-accent), #fff 26%);
   font-family: Consolas, monospace;
 }
 
@@ -642,8 +701,8 @@ textarea {
 .settings-field input:focus,
 .settings-field select:focus,
 .settings-field textarea:focus {
-  border-color: var(--color-accent);
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-accent), transparent 72%);
+  border-color: var(--terminus-accent);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--terminus-accent), transparent 72%);
 }
 
 .settings-shortcuts {
@@ -712,13 +771,13 @@ textarea {
 
 .button-primary {
   color: #fff;
-  background: var(--color-accent);
-  border: 1px solid color-mix(in srgb, var(--color-accent), #fff 18%);
+  background: var(--terminus-accent);
+  border: 1px solid color-mix(in srgb, var(--terminus-accent), #fff 18%);
 }
 
 .button-primary:hover,
 .button-primary:focus-visible {
-  background: color-mix(in srgb, var(--color-accent), #fff 10%);
+  background: color-mix(in srgb, var(--terminus-accent), #fff 10%);
   outline: 0;
 }
 
@@ -778,10 +837,194 @@ textarea {
   }
 }
 
+/* React workspace shell */
+.terminus-app {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  background: var(--background);
+}
+
+.workspace-sidebar {
+  width: 248px;
+  min-width: 248px;
+  height: 100%;
+  border-right: 1px solid var(--sidebar-border);
+}
+
+.workspace-shell {
+  display: grid;
+  grid-template-rows: 52px minmax(0, 1fr) 24px;
+  min-width: 0;
+  min-height: 0;
+  flex: 1 1 auto;
+  background: var(--background);
+}
+
+.workspace-shell .topbar {
+  gap: 10px;
+  height: 52px;
+  padding: 0 8px;
+  color: var(--foreground);
+  background: #202328;
+  border-color: var(--border);
+}
+
+.workspace-shell .tabs {
+  height: 36px;
+  align-self: end;
+  scrollbar-width: none;
+}
+
+.workspace-shell .tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.workspace-shell .tab-item {
+  min-width: 112px;
+  max-width: 190px;
+  border-left-color: var(--border);
+  border-radius: 6px 6px 0 0;
+}
+
+.workspace-shell .tab {
+  color: var(--muted-foreground);
+  font-size: 12px;
+}
+
+.workspace-shell .tab-item.is-active {
+  color: var(--foreground);
+  background: var(--color-terminal-bg);
+  box-shadow: inset 0 2px 0 var(--primary);
+}
+
+.workspace-stage {
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  background: var(--color-terminal-bg);
+}
+
+.workspace-stage > .workspace {
+  width: 100%;
+  height: 100%;
+}
+
+.workspace-empty {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 32px;
+  text-align: center;
+  background:
+    radial-gradient(circle at 50% 42%, color-mix(in srgb, var(--primary), transparent 88%), transparent 34%),
+    var(--color-terminal-bg);
+}
+
+.workspace-empty-mark {
+  display: grid;
+  width: 54px;
+  height: 54px;
+  margin-bottom: 20px;
+  place-items: center;
+  color: var(--primary-foreground);
+  font-family: var(--font-mono);
+  font-size: 17px;
+  font-weight: 700;
+  background: var(--primary);
+  border-radius: 14px;
+  box-shadow: 0 12px 38px color-mix(in srgb, var(--primary), transparent 72%);
+}
+
+.workspace-empty h1 {
+  margin: 0;
+  color: var(--foreground);
+  font-size: 22px;
+  letter-spacing: -0.025em;
+}
+
+.workspace-empty p {
+  max-width: 480px;
+  margin: 10px 0 22px;
+  color: var(--muted-foreground);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.workspace-shell .statusbar {
+  color: color-mix(in srgb, var(--foreground), transparent 18%);
+  background: #1c2025;
+  border-color: var(--border);
+  font-size: 11px;
+}
+
+.workspace-shell .status-mode {
+  opacity: 1;
+  color: var(--muted-foreground);
+}
+
+.status-retry {
+  padding: 0;
+  color: var(--destructive);
+  background: transparent;
+  border: 0;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+@media (max-width: 1049px) {
+  .workspace-shell .topbar {
+    gap: 6px;
+  }
+
+  .workspace-shell .tab-item {
+    min-width: 96px;
+  }
+}
+
+@media (max-width: 760px) {
+  .workspace-shell .topbar {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+  }
+
+  .workspace-shell .tabs {
+    min-width: 80px;
+  }
+}
+
+.codex-working-shimmer {
+  color: transparent;
+  background-image: linear-gradient(90deg, #808080 0 40%, #e7e7e7 50%, #808080 60% 100%);
+  background-size: 200% 100%;
+  background-clip: text;
+  animation: codex-working-shine 1.6s linear infinite;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+@keyframes codex-working-shine {
+  from { background-position: 100% 0; }
+  to { background-position: -100% 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .codex-working-shimmer {
+    color: #e7e7e7;
+    background: none;
+    animation: none;
+    -webkit-text-fill-color: #e7e7e7;
+  }
+}
+
 .command-palette-item:hover,
 .command-palette-item:focus-visible,
 .command-palette-item.is-selected {
-  background: color-mix(in srgb, var(--color-accent), transparent 76%);
+  background: color-mix(in srgb, var(--terminus-accent), transparent 76%);
   outline: 0;
 }
 
@@ -848,6 +1091,6 @@ textarea {
   min-width: 88px;
   height: 34px;
   color: #fff;
-  background: var(--color-accent);
+  background: var(--terminus-accent);
   border: 0;
 }

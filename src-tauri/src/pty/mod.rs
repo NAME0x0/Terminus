@@ -1,5 +1,5 @@
 use std::io::{Read, Write};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
 use std::thread;
 
@@ -97,7 +97,8 @@ impl PtySession {
     {
         let pty_system = native_pty_system();
         let pair = pty_system.openpty(to_portable_size(size))?;
-        let mut command = CommandBuilder::new(shell);
+        let mut command = CommandBuilder::new(&shell);
+        configure_shell_integration(&mut command, &shell);
         command.args(args);
         if let Some(cwd) = &cwd {
             command.cwd(cwd);
@@ -215,12 +216,49 @@ fn to_portable_size(size: PtySize) -> PortablePtySize {
     }
 }
 
+#[cfg(windows)]
+fn configure_shell_integration(command: &mut CommandBuilder, shell: &str) {
+    let is_cmd = Path::new(shell)
+        .file_name()
+        .and_then(|name| name.to_str())
+        .is_some_and(|name| {
+            name.eq_ignore_ascii_case("cmd.exe") || name.eq_ignore_ascii_case("cmd")
+        });
+    if !is_cmd {
+        return;
+    }
+
+    let visible_prompt = command
+        .get_env("PROMPT")
+        .and_then(|value| value.to_str())
+        .filter(|value| !value.is_empty())
+        .unwrap_or("$P$G");
+    command.env("PROMPT", format!("$E]7;file:///$P$E\\{visible_prompt}"));
+}
+
+#[cfg(not(windows))]
+fn configure_shell_integration(_command: &mut CommandBuilder, _shell: &str) {}
+
 #[cfg(test)]
 mod tests {
     use std::sync::mpsc::{self, Receiver};
     use std::time::{Duration, Instant};
 
     use super::*;
+
+    #[cfg(windows)]
+    #[test]
+    fn cmd_shell_integration_reports_cwd_and_preserves_the_visible_prompt() {
+        let mut command = CommandBuilder::new("C:\\Windows\\System32\\cmd.exe");
+        command.env("PROMPT", "terminus $P$G");
+
+        configure_shell_integration(&mut command, "C:\\Windows\\System32\\cmd.exe");
+
+        assert_eq!(
+            command.get_env("PROMPT").and_then(|value| value.to_str()),
+            Some("$E]7;file:///$P$E\\terminus $P$G")
+        );
+    }
 
     #[test]
     fn reports_process_output_and_nonzero_exit_code() {

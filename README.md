@@ -15,9 +15,9 @@ and return later to the same layout and working directories.
 Read the [product vision](VISION.md), [v0.1 product brief](docs/product/terminus-v0.1-product-brief.md),
 and [current project status](STATUS.md) for the product contract and progress.
 
-## Current Stage: E0 Terminal Foundation
+## Current Stage: v0.1 Product Acceptance
 
-The local E0 implementation currently includes:
+The local E0 implementation and the first E1 product slice currently include:
 
 - PTY-backed shell sessions through `portable-pty`.
 - xterm.js rendering with fit, search, web-links, Unicode, clipboard, and WebGL
@@ -30,14 +30,24 @@ The local E0 implementation currently includes:
 - JSON theme loading and live theme/font mapping into xterm and CSS.
 - A shortcut-aware action registry and command palette, plus in-app Settings
   for appearance and terminal defaults.
+- A React, Tailwind, and shadcn/ui application shell with an adaptive workspace
+  sidebar: persistent on wider windows, user-collapsible, and a drawer on
+  constrained windows.
+- Named local workspaces with create, open, rename, remove, reset, save-state
+  feedback, and layout/cwd restoration.
+- A development-only Brainless compatibility preview for future agent event
+  rendering; ordinary terminal streams remain in xterm.js.
 - Recoverable frontend error notices, inline shell failures, and a retryable
   fatal-startup state.
 - A Windows/macOS/Ubuntu GitHub Actions verification contract plus executable
   PTY compatibility smoke tests.
 
-E0 remains incomplete until the remote Windows/macOS/Linux matrix passes and
-the documented native-app terminal compatibility suite meets the
-[technical design](docs/superpowers/specs/2026-06-22-terminus-e0-terminal-foundation-design.md).
+The remote Windows/macOS/Linux matrix passes. E0 remains incomplete until the
+documented native-app terminal compatibility suite meets the
+[technical design](docs/superpowers/specs/2026-06-22-terminus-e0-terminal-foundation-design.md)
+on all three platforms.
+Separately, the packaged Windows v0.1 workspace journey now passes end to end;
+see the [acceptance record](docs/testing/v0.1-workspace-persistence-acceptance.md).
 
 ## First Public Release: v0.1
 
@@ -55,7 +65,8 @@ panes, cloud sync, Lua, and plugins are later work.
 ## Project Layout
 
 - `src-tauri/` — Tauri/Rust backend, IPC commands, PTY sessions, config loading.
-- `frontend/` — Vite/TypeScript frontend, xterm panes, layout, and keybindings.
+- `frontend/` — React/Vite/TypeScript frontend, xterm panes, layout, workspaces,
+  and keybindings.
 - `res/themes/default.json` — Terminus theme source format.
 - `VISION.md` — product positioning, principles, milestones, and roadmap.
 - `STATUS.md` — living implementation status and decision log.
@@ -107,15 +118,17 @@ cargo fmt --manifest-path src-tauri/Cargo.toml -- --check
 cargo clippy --manifest-path src-tauri/Cargo.toml -- -D warnings
 ```
 
-The 21-test frontend suite covers pane attachment, layout lifecycle, tab
-actions, spatial focus, live config application, theme mapping, and keybinding
-replacement plus recoverable frontend failures. The eight-test Rust suite
-covers config defaults and filesystem
-reload, malformed-config fallback, real PTY output and exit codes, dead-session
-guards, manager create/close behavior, interactive input/resize, ANSI VT data,
-and sustained output. The cross-platform workflow is present but has not run on
-GitHub yet; see the [terminal smoke suite](docs/testing/terminal-compatibility-smoke.md)
-for the remaining manual gate.
+The 42-test frontend suite covers pane attachment, layout lifecycle, tab
+actions, spatial focus, live config application, theme mapping, keybinding
+replacement, recoverable failures, workspace persistence, adaptive sidebar
+behavior, OSC 7 parsing, and the Brainless compatibility boundary. The 19-test
+Rust suite
+covers config and workspace-store contracts, filesystem reload and fallback,
+real PTY output and exit codes, dead-session guards, manager create/close
+behavior, interactive input/resize, ANSI VT data, and sustained output. The
+cross-platform workflow is present, but the native-app compatibility suite is
+still a separate manual gate; see the
+[terminal smoke suite](docs/testing/terminal-compatibility-smoke.md).
 
 ## Config
 
@@ -127,6 +140,10 @@ appearance, shell command, shell args, cwd, and keybindings. Changes are watched
 at runtime: appearance and keybindings update existing panes immediately, while
 shell changes apply to terminals created afterward. Malformed TOML falls back
 to built-in defaults without blocking startup.
+
+For isolated native acceptance runs, set `TERMINUS_CONFIG_DIR` to a disposable
+directory. Terminus will place both `config.toml` and `workspaces.json` directly
+under that root instead of reading or changing the normal user configuration.
 
 ## Old Scaffold
 

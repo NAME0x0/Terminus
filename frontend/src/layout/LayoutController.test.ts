@@ -82,6 +82,7 @@ describe('LayoutController pane rendering', () => {
   let statusText: HTMLElement;
   let controller: LayoutController;
   let panes: FakeTerminalPane[];
+  let changeEvents: number;
 
   beforeEach(() => {
     document.body.replaceChildren();
@@ -91,10 +92,13 @@ describe('LayoutController pane rendering', () => {
     document.body.append(tabBar, workspace, statusText);
 
     panes = [];
+    changeEvents = 0;
     controller = new LayoutController(tabBar, workspace, statusText, (cwd) => {
       const pane = new FakeTerminalPane(`pane-${panes.length + 1}`, cwd ?? 'C:\\project');
       panes.push(pane);
       return pane as unknown as TerminalPane;
+    }, () => {
+      changeEvents += 1;
     });
   });
 
@@ -292,6 +296,19 @@ describe('LayoutController pane rendering', () => {
 
     expect(panes[0].disposed).toBe(false);
     expect(visiblePaneNames(workspace)).toEqual(['pane-1']);
+  });
+
+  it('resets to a fresh project-root terminal and reports layout changes', async () => {
+    await controller.initialize();
+    await controller.split('vertical');
+
+    await controller.reset('D:\\next-project');
+
+    expect(panes[0].disposed).toBe(true);
+    expect(panes[1].disposed).toBe(true);
+    expect(panes[2].cwd()).toBe('D:\\next-project');
+    expect(controller.snapshot().tabs).toHaveLength(1);
+    expect(changeEvents).toBe(4);
   });
 });
 

@@ -25,4 +25,14 @@ describe('ActionRegistry failure handling', () => {
     await expect(registry.run('missing')).resolves.toBeUndefined();
     expect(reportError).not.toHaveBeenCalled();
   });
+
+  it('does not run actions that are unavailable in the current context', async () => {
+    const run = vi.fn();
+    const registry = new ActionRegistry();
+    registry.register({ id: 'newTab', title: 'New tab', run, isEnabled: () => false });
+
+    await registry.run('newTab');
+
+    expect(run).not.toHaveBeenCalled();
+  });
 });
