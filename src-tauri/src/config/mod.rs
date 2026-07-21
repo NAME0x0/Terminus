@@ -109,8 +109,7 @@ fn load_config_at(path: &Path) -> Result<Config, ConfigError> {
 }
 
 fn config_path() -> Result<PathBuf, ConfigError> {
-    let mut dir = dirs::config_dir().ok_or(ConfigError::MissingConfigDir)?;
-    dir.push("Terminus");
+    let mut dir = crate::app_paths::config_dir().ok_or(ConfigError::MissingConfigDir)?;
     dir.push("config.toml");
     Ok(dir)
 }

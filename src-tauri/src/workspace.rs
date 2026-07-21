@@ -103,8 +103,7 @@ pub fn save_workspace_store(store: &WorkspaceStore) -> Result<(), WorkspaceError
 }
 
 fn workspace_store_path() -> Result<PathBuf, WorkspaceError> {
-    let mut directory = dirs::config_dir().ok_or(WorkspaceError::MissingConfigDir)?;
-    directory.push("Terminus");
+    let mut directory = crate::app_paths::config_dir().ok_or(WorkspaceError::MissingConfigDir)?;
     directory.push("workspaces.json");
     Ok(directory)
 }

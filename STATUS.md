@@ -1,7 +1,7 @@
 # Terminus — Project Status
 
 > Living document. Tracks vision vs. reality, build state, and decisions.
-> Last updated: 2026-07-18
+> Last updated: 2026-07-21
 >
 > See also: **`VISION.md`** (north-star) ·
 > **`docs/product/terminus-v0.1-product-brief.md`** (first public release) ·
@@ -27,9 +27,9 @@ persistent-workspace contract in `docs/product/terminus-v0.1-product-brief.md`.
 A published Tauri/Rust + React/Vite/TypeScript E0 implementation now exists
 beside the stale C++/wxWidgets scaffold, and E1 workspace persistence plus its
 first product shell are in stacked review changes. The current local head
-typechecks and passes 15 Rust tests and 39 frontend tests. E0's native-app
-manual smoke matrix remains unverified, and v0.1 still needs end-to-end product
-acceptance before public release.
+typechecks and passes 19 Rust tests and 42 frontend tests. The packaged Windows
+v0.1 workspace journey passes end to end; E0's native-app manual smoke matrix
+and packaged v0.1 evidence on macOS/Linux remain unverified.
 
 ## 3. Tech Stack
 
@@ -93,6 +93,14 @@ evidence and is not the active product roadmap.
 - Workspace state now has an explicit empty first run, create/open/rename/remove
   lifecycle, debounced local saves, optimistic error recovery, retry feedback,
   flush-before-switch/close behavior, and layout/cwd restoration.
+- The packaged Windows v0.1 journey now covers create, mixed pane arrangement,
+  native close with a zero exit code, replacement-PTY restore, switching,
+  rename, remove, and safe clear-state behavior. The recorded evidence is in
+  `docs/testing/v0.1-workspace-persistence-acceptance.md`.
+- Native acceptance can use `TERMINUS_CONFIG_DIR` to isolate config and
+  workspace state. The default Windows cmd prompt now emits invisible OSC 7
+  metadata so `cd` updates persisted pane directories without changing the
+  user's visible prompt.
 - React, Tailwind, and shadcn/ui now provide the application shell. Selected
   Brainless components are isolated in a development-only compatibility
   preview for future structured agent events; raw PTY output remains xterm.js.
@@ -117,9 +125,10 @@ evidence and is not the active product roadmap.
 - Frontend failures now surface through bounded, dismissible notices; shell
   spawn failures remain inline and fatal startup failures offer retry. Listener
   registration cleans up partial success before retrying.
-- Thirty-nine Vitest cases cover layout, tabs, spatial focus, config/theme/
+- Forty-two Vitest cases cover layout, tabs, spatial focus, config/theme/
   keybinding application, Settings, action failures, notices, workspace state,
-  adaptive navigation, and the agent-component boundary. Fifteen Rust tests
+  adaptive navigation, OSC 7 parsing, and the agent-component boundary.
+  Nineteen Rust tests
   cover config and workspace persistence contracts, PTY/session lifecycle,
   interactive shell input/resize, ANSI VT preservation, and sustained output.
 - `.github/workflows/ci.yml` defines the Windows/macOS/Ubuntu typecheck, test,
@@ -245,7 +254,9 @@ evidence and is not the active product roadmap.
    replacement is protected and reviewable.
 11. ✅ Implement the E1 persistence contract and adaptive React workspace shell
     as stacked review changes.
-12. ⏳ Run the v0.1 first-run, create, arrange, close, restore, switch, rename,
-    remove, and clear-state acceptance journey in the packaged native app.
-13. ⏳ Revisit installer packaging after the v0.1 product loop is reliable;
+12. ✅ Run the v0.1 first-run, create, arrange, close, restore, switch, rename,
+    remove, and clear-state acceptance journey in the packaged Windows app.
+13. ⏳ Repeat the packaged v0.1 journey on macOS/Linux, or explicitly scope the
+    first public preview to platforms with native acceptance evidence.
+14. ⏳ Revisit installer packaging after the v0.1 product loop is reliable;
     current WiX ICE validation remains environment-blocked.

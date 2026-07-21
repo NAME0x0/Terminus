@@ -144,6 +144,11 @@ pub fn save_workspace_store(store: WorkspaceStore) -> Result<WorkspaceStore, Str
     Ok(store)
 }
 
+#[tauri::command]
+pub fn exit_application(app: AppHandle) {
+    app.exit(0);
+}
+
 fn default_shell() -> String {
     #[cfg(windows)]
     {

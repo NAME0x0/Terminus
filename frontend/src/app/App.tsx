@@ -204,7 +204,7 @@ export function App({ initialConfig, reportError }: AppProps): React.JSX.Element
         try {
           await manager.flush();
           closing = true;
-          await appWindow.destroy();
+          await invoke('exit_application');
         } catch (error) {
           reportError('Could not save the workspace before closing', error);
         }
@@ -287,6 +287,7 @@ export function App({ initialConfig, reportError }: AppProps): React.JSX.Element
         }
         reportError('Workspace state was cleared but could not be saved yet', error);
       }
+      setSettingsOpen(false);
       return;
     }
     if (destructiveAction.workspaceId) {
@@ -433,10 +434,7 @@ export function App({ initialConfig, reportError }: AppProps): React.JSX.Element
             actions={runtime?.actions ?? null}
             onOpenChange={setSettingsOpen}
             onSave={async (nextConfig) => runtime?.saveConfig(nextConfig)}
-            onClearWorkspaceState={() => {
-              setSettingsOpen(false);
-              setDestructiveAction({ kind: 'clear' });
-            }}
+            onClearWorkspaceState={() => setDestructiveAction({ kind: 'clear' })}
           />
         ) : null}
         {destructiveAction ? (

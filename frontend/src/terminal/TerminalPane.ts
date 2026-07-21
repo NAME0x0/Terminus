@@ -11,6 +11,7 @@ import type { AppConfig } from '../config/types';
 import type { ErrorReporter } from '../errors/ErrorCenter';
 import { actionHint } from '../keys/shortcutHints';
 import { createIcon, type IconName } from '../ui/icons';
+import { parseOsc7Cwd } from './osc7';
 import { startTerminalEventStream } from './TerminalEvents';
 
 interface CreateTerminalResponse {
@@ -403,23 +404,6 @@ export class TerminalPane {
     this.statusElement.textContent = this.status;
     this.statusElement.dataset.status = this.status;
     this.element.dataset.status = this.status;
-  }
-}
-
-function parseOsc7Cwd(data: string): string | null {
-  if (!data.startsWith('file://')) {
-    return null;
-  }
-
-  try {
-    const url = new URL(data);
-    let path = decodeURIComponent(url.pathname);
-    if (/^\/[A-Za-z]:\//.test(path)) {
-      path = path.slice(1);
-    }
-    return path || null;
-  } catch {
-    return null;
   }
 }
 

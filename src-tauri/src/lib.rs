@@ -1,3 +1,4 @@
+mod app_paths;
 mod commands;
 mod config;
 mod pty;
@@ -37,7 +38,8 @@ pub fn run() {
             commands::get_config,
             commands::save_config,
             commands::get_workspace_store,
-            commands::save_workspace_store
+            commands::save_workspace_store,
+            commands::exit_application
         ])
         .run(tauri::generate_context!())
         .expect("failed to run Terminus");
